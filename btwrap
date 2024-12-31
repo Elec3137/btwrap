@@ -1,0 +1,108 @@
+#!/bin/dash
+r="\033[31;1m"
+c="\033[36;1m"
+e="\033[0m"
+dict_path="/usr/share/dict/cracklib-small"
+
+# TO DO:
+# add $dict_path logic or replacement
+# check whether path is a subvolume for some actions
+# consider further features: readable arguments, deletion/further managment of snapshots, option to create rw snapshots
+# consider pulling syntax checks to the top: [ "$create" ] || [ "$delete" ] && [ -z $path ]
+# consider adding interactive confirmation (since this can delete important data with a mistake)
+# add global options for: verbosity ^
+# consider changing default deletion behavior
+
+print_usage(){
+printf "${c}Shell wrapper for btrfs snapshots (creation, cleanup, space usage polling)${e}
+Deps: btrfs-progs fd sudo ${dict_path}
+
+${c}Shared options${e}
+    -n <name>    specify the name of the snapshot to be created/deleted
+
+${c}Only one action (capital letter) per command for simplicity${e}
+btwrap -L
+    list all snapshots accessible from working directory
+        -d      additionally poll for ${c}disk usage${e} of each '.snapshots' subvolume (takes a while)
+btwrap -C <subvolume>
+    create a subvolume '.snapshots' under specified subvolume
+btwrap -S
+    snapshot every accessible subvolume that contains a '.snapshots' subvolume using a pseudorandom name
+        -m <path>    specify the subvolume/mount point instead of searching
+btwrap -D <subvolume>
+    delete all snapshots within a specified subvolume
+
+${c}Example usage:${e}
+btwrap -cm /home   # creates subvolume /home/.snapshots
+btwrap -sm /   # snapshots home subvolume into /home/.snapshots
+";}
+while getopts m:LdC:Sn:D: flag; do
+    case "${flag}" in
+            n) name=${OPTARG};;
+        L) list=true;;
+            d) du=true;;
+        C) create=${OPTARG};;
+        S) snapshot=true;;
+            m) path=${OPTARG};;
+        D) delete=${OPTARG};;
+        *) print_usage
+            exit 1 ;;
+    esac
+done
+
+if [ "$list" ]; then
+    if [ -z $path ]; then   # if $path is empty
+        sudo btrfs subvolume list -st /
+        if [ "$du" ]; then
+            printf "${c}be patient please! this may take a while:${e}\n"
+            for i in $(fd -HF ".snapshots" /); do
+                sudo btrfs filesystem du -s $i
+            done
+        fi
+    else
+        sudo btrfs subvolume list -st $path
+        if [ "$du" ]; then
+            printf "${c}be patient please! this may take a while:${e}\n"
+            sudo btrfs filesystem du -s $path/.snapshots
+        fi
+    fi
+
+
+elif [ ! -z "$create" ]; then
+    sudo btrfs subvolume create $create/.snapshots # prints "ERROR: Could not create subvolume: File exists" if there's something else already there
+
+
+elif [ "$snapshot" ]; then
+    rand=$(dd if=/dev/urandom count=1 2> /dev/null | cksum | cut -d' ' -f1)
+    if [ -z $name ]; then   # if name is empty (try getting a word)
+        if [ -r $dict_path ]; then  # if $dict_path DOES exist and is readable
+            name=$(shuf -n 1 $dict_path)$rand
+
+        else
+            printf "${r}Unreadable or DNE: ${dict_path} falling back to just random int${e}\n"
+            name=$rand
+        fi
+    fi
+
+    if [ -z $path ]; then   # if $path is empty
+        for i in $(fd -HF ".snapshots" /); do
+            sudo btrfs subvolume snapshot -r $i../ $i$name
+        done
+    else
+        sudo btrfs subvolume snapshot -r $path $path/.snapshots/$name
+    fi
+
+
+elif [ ! -z "$delete" ]; then
+    if [ -z $name ]; then
+        for i in $(sudo ls $delete/.snapshots/); do
+            sudo btrfs subvolume delete $delete/.snapshots/$i
+        done
+    else
+        sudo btrfs subvolume delete $delete/.snapshots/$name
+    fi
+
+else
+print_usage
+exit 1
+fi
