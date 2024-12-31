@@ -52,7 +52,7 @@ done
 
 if [ "$list" ]; then
     if [ -z $path ]; then   # if $path is empty
-        sudo btrfs subvolume list -st /
+        sudo btrfs subv list -st /
         if [ "$du" ]; then
             [ ! "$quiet" ] && printf "${c}be patient please! this may take a while:${e}\n"
             for i in $(fd -HF ".snapshots" /); do
@@ -60,7 +60,7 @@ if [ "$list" ]; then
             done
         fi
     else
-        sudo btrfs subvolume list -st $path
+        sudo btrfs subv list -st $path
         if [ "$du" ]; then
             [ ! "$quiet" ] && printf "${c}be patient please! this may take a while:${e}\n"
             sudo btrfs filesystem du -s $path/.snapshots
@@ -69,7 +69,7 @@ if [ "$list" ]; then
 
 
 elif [ ! -z "$create" ]; then
-    sudo btrfs subvolume create $create/.snapshots # prints "ERROR: Could not create subvolume: File exists" if there's something else already there
+    sudo btrfs subv create $create/.snapshots # prints "ERROR: Could not create subvolume: File exists" if there's something else already there
 
 
 elif [ "$snapshot" ]; then
@@ -86,20 +86,20 @@ elif [ "$snapshot" ]; then
 
     if [ -z $path ]; then   # if $path is empty
         for i in $(fd -HF ".snapshots" /); do
-            sudo btrfs subvolume snapshot -r $i../ $i$name
+            sudo btrfs subv snap -r $i../ $i$name
         done
     else
-        sudo btrfs subvolume snapshot -r $path $path/.snapshots/$name
+        sudo btrfs subv snap -r $path $path/.snapshots/$name
     fi
 
 
 elif [ ! -z "$delete" ]; then
     if [ -z $name ]; then
         for i in $(sudo ls $delete/.snapshots/); do
-            sudo btrfs subvolume delete $delete/.snapshots/$i
+            sudo btrfs subv delete $delete/.snapshots/$i
         done
     else
-        sudo btrfs subvolume delete $delete/.snapshots/$name
+        sudo btrfs subv delete $delete/.snapshots/$name
     fi
 
 else
