@@ -105,9 +105,9 @@ elif [ "$delete" ]; then
         sudo btrfs subv delete ${i}$name
     done
     elif [ -z $name ]; then
-        sudo btrfs subv delete ${path}$(echo $(sudo ls -t --time creation $path/.snapshots) | awk '{print $NF}')
+        sudo btrfs subv delete ${path}/.snapshots/$(echo $(sudo ls -t --time creation $path/.snapshots) | awk '{print $NF}')
     else
-        sudo btrfs subv delete ${path}$name
+        sudo btrfs subv delete ${path}/.snapshots/$name
     fi
 
 else
