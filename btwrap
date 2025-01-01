@@ -6,13 +6,13 @@ dict_path="/usr/share/dict/cracklib-small"
 
 # TO DO:
 # add $dict_path logic or replacement
-# check whether path is a subvolume for some actions
+# check whether path is a subvolume for some actions (is this needed?)
 # consider further features: option to create rw snapshots
 # consider adding interactive confirmation (since this can delete important data with a mistake), integrate with -q
 
 print_usage(){
 printf "${c}Shell wrapper for btrfs snapshots (creation, cleanup, space usage polling)${e}
-Deps: btrfs-progs fd sudo ${dict_path}
+Deps: btrfs-progs fd sudo ls awk ${dict_path}
 
 ${c}Global options${e}
     -q           quiet (suppress minor warnings and all confirmations)
@@ -36,6 +36,7 @@ ${c}Example usage:${e}
 btwrap -C /home   # creates subvolume /home/.snapshots
 btwrap -Sm /home   # snapshots home subvolume into /home/.snapshots
 ";}
+printf "$r"
 while getopts m:LdC:Sn:Dq flag; do
     case "${flag}" in
             q) quiet=true;;
@@ -47,10 +48,9 @@ while getopts m:LdC:Sn:Dq flag; do
             n) name=${OPTARG};;
         S) snapshot=true;;
         D) delete=true;;
-        *) print_usage
-            exit 1 ;;
     esac
 done
+printf "$e"
 
 if [ "$list" ]; then
     if [ -z $path ]; then   # if $path is empty
@@ -97,13 +97,13 @@ elif [ "$snapshot" ]; then
 
 elif [ "$delete" ]; then
     if [ -z $name ] && [ -z $path ]; then   # if $name && $path are empty
-    for i in $(fd -HF ".snapshots" /); do
-        sudo btrfs subv delete ${i}$(echo $(sudo ls -t --time creation $i) | awk '{print $NF}')
-    done
+        for i in $(fd -HF ".snapshots" /); do
+            sudo btrfs subv delete ${i}$(echo $(sudo ls -t --time creation $i) | awk '{print $NF}')
+        done
     elif [ -z $path ]; then
-    for i in $(fd -HF ".snapshots" /); do
-        sudo btrfs subv delete ${i}$name
-    done
+        for i in $(fd -HF ".snapshots" /); do
+            sudo btrfs subv delete ${i}$name
+        done
     elif [ -z $name ]; then
         sudo btrfs subv delete ${path}/.snapshots/$(echo $(sudo ls -t --time creation $path/.snapshots) | awk '{print $NF}')
     else
