@@ -1,4 +1,4 @@
-#!/bin/dash
+#!/bin/sh
 while getopts s flag; do
     case "${flag}" in
         s) systemd=true;;
