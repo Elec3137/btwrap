@@ -17,5 +17,5 @@ Keep in mind a btrfs snapshot is not a true backup and will be corrupted if the 
 ```sh
 cd /tmp; git clone https://github.com/Elec3137/btwrap.git; cd ./btwrap
 # remove the -s flag if you don't want default systemd service and timer installed
-./install -s
+./install.sh -s
 ```
