@@ -98,19 +98,20 @@ if [ "$snapshot" ]; then
     else
         sudo btrfs subv snap -r $path $path/.snapshots/$name
     fi
+    name='' # reset name value so that if $delete is also true, it doesn't force deletion of the snapshot it just created
 fi
 
 if [ "$delete" ]; then
     if [ -z $name ] && [ -z $path ]; then   # if $name && $path are empty
         for i in $(fd -HF ".snapshots" /); do
-            sudo btrfs subv delete ${i}$(echo $(sudo ls -t --time creation $i) | awk '{print $NF}')
+            sudo btrfs subv delete ${i}$(echo $(sudo ls -t --time creation $i) | awk '{print $1}')
         done
     elif [ -z $path ]; then
         for i in $(fd -HF ".snapshots" /); do
             sudo btrfs subv delete ${i}$name
         done
     elif [ -z $name ]; then
-        sudo btrfs subv delete ${path}/.snapshots/$(echo $(sudo ls -t --time creation $path/.snapshots) | awk '{print $NF}')
+        sudo btrfs subv delete ${path}/.snapshots/$(echo $(sudo ls -t --time creation $path/.snapshots) | awk '{print $1}')
     else
         sudo btrfs subv delete ${path}/.snapshots/$name
     fi
