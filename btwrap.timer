@@ -1,0 +1,9 @@
+[Unit]
+Description=Trigger snapshot "maintenance" weekly via btwrap.service
+
+[Timer]
+OnCalendar=weekly
+Persistent=true
+
+[Install]
+WantedBy=timers.target

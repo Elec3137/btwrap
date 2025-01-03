@@ -1,0 +1,8 @@
+[Unit]
+Description=attempts to snapshot all found directories containing '.snapshots' and then delete the oldest snapshot within them, make sure there are already snaphots so it doesn't just delete its own snapshot
+
+[Service]
+ExecStart=/bin/btwrap -SD
+
+[Install]
+WantedBy=multi-user.target
