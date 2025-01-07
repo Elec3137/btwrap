@@ -63,7 +63,7 @@ printf "$e"
 if [ -n "$list" ]; then
     if [ -z $path ]; then   # if $path is empty
         sudo btrfs subv list -st /
-        if [ ! "$du" = "true" ]; then
+        if [ "$du" = "true" ]; then
             [ ! "$quiet" = "true" ] && printf "${c}be patient please! this may take a while:${e}\n"
             for i in $(sfd); do
                 chk_dups && sudo btrfs filesystem du -s $i
@@ -71,7 +71,7 @@ if [ -n "$list" ]; then
         fi
     else
         sudo btrfs subv list -st $path
-        if [ ! "$du" = "true" ]; then
+        if [ "$du" = "true" ]; then
             [ ! "$quiet" = "true" ] && printf "${c}be patient please! this may take a while:${e}\n"
             sudo btrfs filesystem du -s $path/.snapshots
         fi
@@ -96,7 +96,7 @@ if [ -n "$snapshot" ]; then
 
     if [ -z $path ]; then   # if $path is empty
         for i in $(sfd); do
-            chk_dups && btrfs subv snap -r $i../ $i$name
+            chk_dups && sudo btrfs subv snap -r $i../ $i$name
         done
     else
         sudo btrfs subv snap -r $path $path/.snapshots/$name
