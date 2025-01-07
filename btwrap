@@ -63,6 +63,7 @@ if [ "$list" ]; then
         if [ "$du" ]; then
             [ ! "$quiet" ] && printf "${c}be patient please! this may take a while:${e}\n"
             for i in $(fd -HF ".snapshots" /); do
+                [ ! $(echo $i | awk -F "snapshots" '{print NF-1}') -lt 2 ] && continue # to ignore current directory if the .snapshots subvolume is within another .snapshots subvolume
                 sudo btrfs filesystem du -s $i
             done
         fi
@@ -93,6 +94,7 @@ if [ "$snapshot" ]; then
 
     if [ -z $path ]; then   # if $path is empty
         for i in $(fd -HF ".snapshots" /); do
+            [ ! $(echo $i | awk -F "snapshots" '{print NF-1}') -lt 2 ] && continue # to ignore current directory if the .snapshots subvolume is within another .snapshots subvolume
             sudo btrfs subv snap -r $i../ $i$name
         done
     else
@@ -104,10 +106,12 @@ fi
 if [ "$delete" ]; then
     if [ -z $name ] && [ -z $path ]; then   # if $name && $path are empty
         for i in $(fd -HF ".snapshots" /); do
+            [ ! $(echo $i | awk -F "snapshots" '{print NF-1}') -lt 2 ] && continue # to ignore current directory if the .snapshots subvolume is within another .snapshots subvolume
             sudo btrfs subv delete ${i}$(echo $(sudo ls -t --time creation $i) | awk '{print $1}')
         done
     elif [ -z $path ]; then
         for i in $(fd -HF ".snapshots" /); do
+            [ ! $(echo $i | awk -F "snapshots" '{print NF-1}') -lt 2 ] && continue # to ignore current directory if the .snapshots subvolume is within another .snapshots subvolume
             sudo btrfs subv delete ${i}$name
         done
     elif [ -z $name ]; then
