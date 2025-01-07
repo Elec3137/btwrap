@@ -4,11 +4,6 @@ c="\033[36;1m"
 e="\033[0m"
 dict_path="/usr/share/dict/cracklib-small"
 
-# TO DO:
-# add $dict_path logic or replacement
-# check whether path is a subvolume for some actions (is this needed?)
-# consider further features: option to create rw snapshots
-# consider adding interactive confirmation (since this can delete important data with a mistake), integrate with -q
 
 print_usage(){
 printf "${c}Shell wrapper for btrfs snapshots (creation, cleanup, space usage polling)${e}
