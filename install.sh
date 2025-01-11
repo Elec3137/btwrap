@@ -1,7 +1,8 @@
 #!/bin/sh
-while getopts s flag; do
+while getopts sp flag; do
     case "${flag}" in
         s) systemd=true;;
+        p) preserve=true;;
     esac
 done
 sudo cp btwrap /bin/
@@ -12,3 +13,5 @@ if [ ! "$systemd" = true ]; then
     sudo systemctl daemon-reload
     sudo systemctl enable --now btwrap.timer
 fi
+
+[ ! "$preserve" = true ] && rm -rf /tmp/btwrap  # cleanup
