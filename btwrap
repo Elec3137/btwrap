@@ -60,7 +60,7 @@ while getopts m:LdC:Sn:Dq flag; do
 done
 printf "$e"
 
-if [ -n "$list" ]; then
+if [ "$list" = true ]; then
     if [ -z $path ]; then   # if $path is empty
         sudo btrfs subv list -st /
         if [ "$du" = "true" ]; then
@@ -82,7 +82,7 @@ if [ -n "$create" ]; then
     sudo btrfs subv create $create/.snapshots # prints "ERROR: Could not create subvolume: File exists" if there's something else already there
 fi
 
-if [ -n "$delete" ]; then
+if [ "$delete" = true ]; then
     if [ -z $name ] && [ -z $path ]; then   # if $name && $path are empty
         for i in $(sfd); do
             chk_dups && sudo btrfs subv delete ${i}$(echo $(sudo ls -t --time creation $i) | awk '{print $1}')
@@ -98,7 +98,7 @@ if [ -n "$delete" ]; then
     fi
 fi
 
-if [ -n "$snapshot" ]; then
+if [ "$snapshot" = true ]; then
     if [ -z $name ]; then   # if name is empty (try getting a word)
         rand=$(dd if=/dev/urandom count=1 2> /dev/null | cksum | cut -d' ' -f1)
         if [ -r $dict_path ]; then  # if $dict_path DOES exist and is readable
