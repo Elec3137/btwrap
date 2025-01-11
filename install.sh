@@ -7,7 +7,7 @@ while getopts sp flag; do
 done
 sudo cp btwrap /bin/
 
-if [ ! "$systemd" = true ]; then
+if [ "$systemd" = true ]; then
     sudo cp btwrap.timer /etc/systemd/system/
     sudo cp btwrap.service /etc/systemd/system/
     sudo systemctl daemon-reload
