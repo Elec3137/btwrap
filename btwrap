@@ -28,7 +28,7 @@ btwrap -L
 btwrap -C <subvolume>
     create a subvolume '.snapshots' under specified subvolume
 
-Action order: list > create > snapshot > delete
+Action order: list > create > delete > snapshot
 ${c}Example usage:${e}
 btwrap -C /home     # creates subvolume /home/.snapshots
 btwrap -Sm /home    # snapshots /home subvolume into /home/.snapshots/<name>
@@ -82,6 +82,22 @@ if [ -n "$create" ]; then
     sudo btrfs subv create $create/.snapshots # prints "ERROR: Could not create subvolume: File exists" if there's something else already there
 fi
 
+if [ -n "$delete" ]; then
+    if [ -z $name ] && [ -z $path ]; then   # if $name && $path are empty
+        for i in $(sfd); do
+            chk_dups && sudo btrfs subv delete ${i}$(echo $(sudo ls -t --time creation $i) | awk '{print $1}')
+        done
+    elif [ -z $path ]; then
+        for i in $(sfd); do
+            chk_dups && sudo btrfs subv delete ${i}$name
+        done
+    elif [ -z $name ]; then
+        sudo btrfs subv delete ${path}/.snapshots/$(echo $(sudo ls -t --time creation $path/.snapshots) | awk '{print $1}')
+    else
+        sudo btrfs subv delete ${path}/.snapshots/$name
+    fi
+fi
+
 if [ -n "$snapshot" ]; then
     if [ -z $name ]; then   # if name is empty (try getting a word)
         rand=$(dd if=/dev/urandom count=1 2> /dev/null | cksum | cut -d' ' -f1)
@@ -101,21 +117,5 @@ if [ -n "$snapshot" ]; then
     else
         sudo btrfs subv snap -r $path $path/.snapshots/$name
     fi
-    name='' # reset name value so that if $delete is also true, it doesn't force deletion of the snapshot it just created
 fi
 
-if [ -n "$delete" ]; then
-    if [ -z $name ] && [ -z $path ]; then   # if $name && $path are empty
-        for i in $(sfd); do
-            chk_dups && sudo btrfs subv delete ${i}$(echo $(sudo ls -t --time creation $i) | awk '{print $1}')
-        done
-    elif [ -z $path ]; then
-        for i in $(sfd); do
-            chk_dups && sudo btrfs subv delete ${i}$name
-        done
-    elif [ -z $name ]; then
-        sudo btrfs subv delete ${path}/.snapshots/$(echo $(sudo ls -t --time creation $path/.snapshots) | awk '{print $1}')
-    else
-        sudo btrfs subv delete ${path}/.snapshots/$name
-    fi
-fi
