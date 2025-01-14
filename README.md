@@ -8,7 +8,7 @@ This wrapper was intended to simplify the use of basic snapshot functions with t
     
 Then, options are given to fill in the gaps for whenever you need to do something else, or keep track of space usage
 
-Otherwise, a simple systemd timer is able to keep a basic "backup" of whatever you need, without a config file
+Otherwise, a simple systemd timer is able to keep a basic rolling "backup" of whatever you need, without a config file
 
 Keep in mind a btrfs snapshot is not a true backup and will be corrupted if the original data is corrupted, yada yada :)
 
@@ -16,5 +16,5 @@ Keep in mind a btrfs snapshot is not a true backup and will be corrupted if the 
 
 ```sh
 cd /tmp; git clone https://github.com/Elec3137/btwrap.git; cd ./btwrap
-# ./install.sh     # -s arg to set up auto snapshots, -p to preserve cloned repo
+./install.sh     # -s arg to set up auto snapshots, -p to preserve cloned repo
 ```
