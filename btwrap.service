@@ -1,5 +1,5 @@
 [Unit]
-Description=attempts to snapshot all found directories containing '.snapshots' and then delete the oldest snapshot within them, make sure there are already snaphots so it doesn't just delete its own snapshot
+Description=for each visible '.snapshots' subvolume: delete the oldest snapshot within and then snapshot the parent subvolume into it
 
 [Service]
 ExecStart=/bin/btwrap -SD
