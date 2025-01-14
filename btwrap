@@ -69,12 +69,12 @@ if [ "$list" = true ]; then
 fi
 if [ "$du" = "true" ]; then
     [ ! "$quiet" = "true" ] && printf "${c}be patient please! this may take a while:${e}\n"
-    if [ -n $path ]; then
-        sudo btrfs filesystem du -s $path/.snapshots
-    else
+    if [ -z $path ]; then
         for i in $(sfd); do
             chk_dups && sudo btrfs filesystem du -s $i
         done
+    else
+        sudo btrfs filesystem du -s $path/.snapshots
     fi
 fi
 
