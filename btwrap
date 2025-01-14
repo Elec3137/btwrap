@@ -105,7 +105,7 @@ if [ "$snapshot" = true ]; then
             name=$(shuf -n 1 $dict_path)$rand
 
         else
-            printf "${c}Unreadable or DNE: ${dict_path} falling back to just random int${e}\n"
+            [ ! "$quiet" = "true" ] && printf "${c}Unreadable or DNE: ${dict_path} falling back to just random int${e}\n"
             name=$rand
         fi
     fi
