@@ -12,9 +12,29 @@ Otherwise, a simple systemd timer is able to keep a basic rolling "backup" of wh
 
 Keep in mind a btrfs snapshot is not a true backup and will be corrupted if the original data is corrupted, yada yada :)
 
-## Installation
+# Installation
 
+### Arch linux
+```sh
+cd /tmp && wget https://raw.githubusercontent.com/Elec3137/btwrap/refs/heads/main/PKGBUILD && makepkg -si
+```
+
+### Generic
 ```sh
 cd /tmp; git clone https://github.com/Elec3137/btwrap.git; cd ./btwrap
-./install.sh     # -s arg to set up auto snapshots, -p to preserve cloned repo
+sudo cp btwrap /bin/
+
+# to install the systemd unit files
+sudo cp btwrap.timer /etc/systemd/system/ && sudo cp btwrap.service /etc/systemd/system/
 ```
+
+## Post-install
+
+Try it out! `btwrap -SC /`
+
+```sh
+# to load and enable systemd service
+sudo systemctl daemon-reload
+sudo systemctl enable --now btwrap.timer
+```
+
