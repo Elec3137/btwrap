@@ -16,7 +16,7 @@ Keep in mind a btrfs snapshot is not a true backup and will be corrupted if the 
 
 ### Arch linux
 ```sh
-cd /tmp && wget https://raw.githubusercontent.com/Elec3137/btwrap/refs/heads/main/PKGBUILD && makepkg -si
+paru -S btwrap-git
 ```
 
 ### Generic
