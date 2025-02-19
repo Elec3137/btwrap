@@ -1,5 +1,5 @@
 # Maintainer: Electria
-pkgname=btwrap
+pkgname=btwrap-git
 pkgver=1
 pkgrel=1
 pkgdesc="Shell wrapper for managing BTRFS snapshots"
@@ -16,7 +16,7 @@ source=("git+https://github.com/Elec3137/btwrap#branch=main")
 sha256sums=('SKIP')
 
 pkgver() {
-  cd "$pkgname"
+  cd btwrap
   printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
 }
 
