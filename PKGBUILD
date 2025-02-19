@@ -8,6 +8,8 @@ url="https://github.com/Elec3137/btwrap"
 license=('GPL-3.0-or-later')
 depends=('gawk' 'systemd' 'sudo' 'btrfs-progs' 'fd')
 makedepends=('git')
+conflicts=('btwrap')
+provides=('btwrap')
 optdepends=(
     'cracklib: to pick random words for snapshot names'
 )
