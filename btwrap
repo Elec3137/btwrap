@@ -66,7 +66,7 @@ if [ "$du" = "true" ]; then
     [ ! "$quiet" = "true" ] && printf "${c}be patient please! this may take a while:${e}\n"
     if [ -z "$path" ]; then
         for i in $(sfd); do
-            chk_dups && sudo btrfs filesystem du -s $i
+            chk_dups && sudo btrfs filesystem du -s "$i"
         done
     else
         sudo btrfs filesystem du -s "$path/.snapshots"
@@ -83,7 +83,7 @@ if [ -n "$create" ]; then
         sudo rm -rf "${create}.old"
     fi
 
-    sudo btrfs subv create $create/.snapshots # prints "ERROR: Could not create subvolume: File exists" if there's something else already there
+    sudo btrfs subv create "$create/.snapshots" # prints "ERROR: Could not create subvolume: File exists" if there's something else already there
 fi
 
 if [ "$delete" = true ]; then
