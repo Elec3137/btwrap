@@ -74,6 +74,15 @@ if [ "$du" = "true" ]; then
 fi
 
 if [ -n "$create" ]; then
+
+    # if $create is NOT a btrfs subvolume but is still on a btrfs filesystem
+    if [ ! "$(stat --format=%i "$create")" -eq 256 ] && [ "$(stat -f --format=%T "$create")" = "btrfs" ] ; then
+        sudo mv "$create" "${create}.old" || exit
+        sudo btrfs subv create "$create" || exit
+        sudo mv "${create}.old/*" "${create}/" || exit
+        sudo rm -rf "${create}.old"
+    fi
+
     sudo btrfs subv create $create/.snapshots # prints "ERROR: Could not create subvolume: File exists" if there's something else already there
 fi
 
