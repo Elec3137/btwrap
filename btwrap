@@ -22,8 +22,7 @@ btwrap -L
     ${c}list${e} all snapshots
         -d       poll for ${c}disk usage${e} summary of each '.snapshots' subvolume
 ${c}Options${e}
-    -m <path>    specify the subvolume instead of searching
-    -n <name>    specify the name of the snapshot to be created/deleted
+    -m <path>    specify the subvolume instead of searching (for D,S,d)
 
 Action order: list > create > delete > snapshot
 ${c}Example usage:${e}
@@ -48,7 +47,6 @@ while getopts m:LdC:Sn:Dq flag; do
         L) list=true;;
         d) du=true;;
             m) path=${OPTARG};;
-            n) name=${OPTARG};;
 
             C) create=${OPTARG};;
         *) print_usage
@@ -80,31 +78,23 @@ if [ -n "$create" ]; then
 fi
 
 if [ "$delete" = true ]; then
-    if [ -z $name ] && [ -z $path ]; then   # if $name & $path are empty
+    if [ -z $path ]; then   # $path is empty
         for i in $(sfd); do
             chk_dups && sudo btrfs subv delete ${i}$(echo $(sudo ls -t --time creation $i) | awk '{print $1}')
         done
-    elif [ -z $path ]; then
-        for i in $(sfd); do
-            chk_dups && sudo btrfs subv delete ${i}$name
-        done
-    elif [ -z $name ]; then
-        sudo btrfs subv delete ${path}/.snapshots/$(echo $(sudo ls -t --time creation $path/.snapshots) | awk '{print $1}')
     else
-        sudo btrfs subv delete ${path}/.snapshots/$name
+        sudo btrfs subv delete ${path}/.snapshots/$(echo $(sudo ls -t --time creation $path/.snapshots) | awk '{print $1}')
     fi
 fi
 
 if [ "$snapshot" = true ]; then
-    if [ -z $name ]; then   # if name is empty (try getting a word)
-        rand=$(dd if=/dev/urandom count=1 2> /dev/null | cksum | cut -d' ' -f1)
-        if [ -r $dict_path ]; then  # if $dict_path DOES exist and is readable
-            name=$(shuf -n 1 $dict_path)$rand
+    rand=$(dd if=/dev/urandom count=1 2> /dev/null | cksum | cut -d' ' -f1)
 
-        else
-            [ ! "$quiet" = "true" ] && printf "${c}Unreadable or DNE: ${dict_path} falling back to just random int${e}\n"
-            name=$rand
-        fi
+    if [ -r $dict_path ]; then  # if $dict_path DOES exist and is readable
+        name=$(shuf -n 1 $dict_path)$rand
+    else
+        [ ! "$quiet" = "true" ] && printf "${c}Unreadable or DNE: ${dict_path} falling back to just random int${e}\n"
+        name=$rand
     fi
 
     if [ -z $path ]; then   # if $path is empty
