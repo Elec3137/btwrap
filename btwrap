@@ -35,7 +35,7 @@ sfd(){
 fd -HF ".snapshots" /
 }
 chk_dups(){ # returns true if there are no nested subvolumes in $i
-[ $(echo $i | awk -F "snapshots" '{print NF-1}') -lt 2 ]
+[ "$(echo "$i" | awk -F "snapshots" '{print NF-1}')" -lt 2 ]
 }
 
 printf "$r"
@@ -56,20 +56,20 @@ done
 printf "$e"
 
 if [ "$list" = true ]; then
-    if [ -z $path ]; then   # if $path is empty
+    if [ -z "$path" ]; then   # if $path is empty
         sudo btrfs subv list -st /
     else
-        sudo btrfs subv list -st $path
+        sudo btrfs subv list -st "$path"
     fi
 fi
 if [ "$du" = "true" ]; then
     [ ! "$quiet" = "true" ] && printf "${c}be patient please! this may take a while:${e}\n"
-    if [ -z $path ]; then
+    if [ -z "$path" ]; then
         for i in $(sfd); do
             chk_dups && sudo btrfs filesystem du -s $i
         done
     else
-        sudo btrfs filesystem du -s $path/.snapshots
+        sudo btrfs filesystem du -s "$path/.snapshots"
     fi
 fi
 
@@ -87,12 +87,12 @@ if [ -n "$create" ]; then
 fi
 
 if [ "$delete" = true ]; then
-    if [ -z $path ]; then   # $path is empty
+    if [ -z "$path" ]; then   # $path is empty
         for i in $(sfd); do
-            chk_dups && sudo btrfs subv delete ${i}$(echo $(sudo ls -t --time creation $i) | awk '{print $1}')
+            chk_dups && sudo btrfs subv delete "${i}$(sudo ls -t --time creation "$i" | awk '{print $1}')"
         done
     else
-        sudo btrfs subv delete ${path}/.snapshots/$(echo $(sudo ls -t --time creation $path/.snapshots) | awk '{print $1}')
+        sudo btrfs subv delete "${path}/.snapshots/$(sudo ls -t --time creation "$path/.snapshots" | awk '{print $1}')"
     fi
 fi
 
@@ -106,12 +106,12 @@ if [ "$snapshot" = true ]; then
         name=$rand
     fi
 
-    if [ -z $path ]; then   # if $path is empty
+    if [ -z "$path" ]; then   # if $path is empty
         for i in $(sfd); do
-            chk_dups && sudo btrfs subv snap -r $i../ $i$name
+            chk_dups && sudo btrfs subv snap -r "$i../" "$i$name"
         done
     else
-        sudo btrfs subv snap -r $path $path/.snapshots/$name
+        sudo btrfs subv snap -r "$path" "$path/.snapshots/$name"
     fi
 fi
 
