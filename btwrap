@@ -31,10 +31,10 @@ btwrap -Sm /home    # snapshots /home subvolume into /home/.snapshots/<name>
 btwrap -SD          # for each visible '.snapshots' subvolume: delete the oldest snapshot within and then snapshot the parent subvolume into it
 ";}
 
-sfd(){ # shorthand for constantly used fd command
+sfd(){
 fd -HF ".snapshots" /
 }
-chk_dups(){ # for making sure there are no nested subvolumes in $i
+chk_dups(){ # returns true if there are no nested subvolumes in $i
 [ $(echo $i | awk -F "snapshots" '{print NF-1}') -lt 2 ]
 }
 
