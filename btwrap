@@ -9,7 +9,7 @@ print_usage(){
 printf "${c}Shell wrapper for btrfs snapshots (creation, cleanup, space usage polling)${e}
 
 ${c}Global options${e}
-    -q                  quiet (suppress minor warnings and all confirmations)
+    -q                  ${c}quiet${e} (suppress minor warnings and all confirmations)
 
 ${c}Actions${e}
     -C <subvolume>      ${c}create${e} a subvolume '.snapshots' under specified subvolume
