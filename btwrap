@@ -21,10 +21,12 @@ btwrap -D
 btwrap -L
     ${c}list${e} all snapshots
         -d       poll for ${c}disk usage${e} summary of each '.snapshots' subvolume
+btwrap -G
+    update ${c}grub${e} (for grub-btrfs)
 ${c}Options${e}
     -m <path>    specify the subvolume instead of searching (for D,S,d)
 
-Action order: list > create > delete > snapshot
+Action order: list > create > delete > snapshot > grub
 ${c}Example usage:${e}
 btwrap -C /home     # creates subvolume /home/.snapshots
 btwrap -Sm /home    # snapshots /home subvolume into /home/.snapshots/<name>
@@ -39,13 +41,14 @@ chk_dups(){ # returns true if there are no nested subvolumes in $i
 }
 
 printf "$r"
-while getopts m:LdC:Sn:Dq flag; do
+while getopts m:LdC:Sn:DqG flag; do
     case "${flag}" in
             q) quiet=true;;
         S) snapshot=true;;
         D) delete=true;;
         L) list=true;;
         d) du=true;;
+        G) grub=true;;
             m) path=${OPTARG};;
 
             C) create=${OPTARG};;
@@ -119,5 +122,9 @@ if [ "$snapshot" = true ]; then
     else
         sudo btrfs subv snap -r "$path" "$path/.snapshots/$name"
     fi
+fi
+
+if [ "$grub" = "true" ]; then
+    sudo grub-mkconfig -o /boot/grub/grub.cfg
 fi
 
