@@ -9,22 +9,17 @@ print_usage(){
 printf "${c}Shell wrapper for btrfs snapshots (creation, cleanup, space usage polling)${e}
 
 ${c}Global options${e}
-    -q     quiet (suppress minor warnings and all confirmations)
+    -q                  quiet (suppress minor warnings and all confirmations)
 
 ${c}Actions${e}
-btwrap -C <subvolume>
-    ${c}create${e} a subvolume '.snapshots' under specified subvolume
-btwrap -S
-    ${c}snapshot${e} every subvolume that contains a '.snapshots' subvolume
-btwrap -D
-    ${r}delete${e} the oldest snapshot from each '.snapshots' subvolume
-btwrap -L
-    ${c}list${e} all snapshots
-        -d       poll for ${c}disk usage${e} summary of each '.snapshots' subvolume
-btwrap -G
-    update ${c}grub${e} (for grub-btrfs)
+    -C <subvolume>      ${c}create${e} a subvolume '.snapshots' under specified subvolume
+    -S                  ${c}snapshot${e} every subvolume that contains a '.snapshots' subvolume
+    -D                  ${r}delete${e} the oldest snapshot from each '.snapshots' subvolume
+    -L                  ${c}list${e} all snapshots
+    -d                  poll for ${c}disk usage${e} summary of each '.snapshots' subvolume
+    -G                  update ${c}grub${e} (for grub-btrfs)
 ${c}Options${e}
-    -m <path>    specify the subvolume instead of searching (for D,S,d)
+    -m <path>           specify the subvolume instead of searching (for D,S,d)
 
 Action order: list > create > delete > snapshot > grub
 ${c}Example usage:${e}
