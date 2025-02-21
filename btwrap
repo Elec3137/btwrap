@@ -39,14 +39,13 @@ printf "$r"
 while getopts m:LdC:Sn:DqG flag; do
     case "${flag}" in
             q) quiet=true;;
+        C) create=${OPTARG};;
         S) snapshot=true;;
         D) delete=true;;
         L) list=true;;
         d) du=true;;
         G) grub=true;;
             m) path=${OPTARG};;
-
-            C) create=${OPTARG};;
         *) print_usage
             exit 1 ;;
     esac
