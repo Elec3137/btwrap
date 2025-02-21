@@ -7,7 +7,7 @@
 
 * possibly remove '-m', ~~'-n'~~ operations; not useful for the simple management this project is made for (if needed, using btrfs-progs alone to do this would be easy?)
 
-* consider adding an action to run update-grub after others (to trigger grub-btrfs)
+* ~~consider adding an action to run update-grub after others (to trigger grub-btrfs)~~
 
 * more logic for -D action, to preserve snapshots or delete newest instead?
 
