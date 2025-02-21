@@ -7,115 +7,118 @@ dict_path="/usr/share/dict/cracklib-small"
 
 print_usage(){
 printf "${c}Shell wrapper for btrfs snapshots (creation, cleanup, space usage polling)${e}
-Deps: btrfs-progs fd sudo ls awk ${dict_path}
 
 ${c}Global options${e}
-    -q     quiet (suppress minor warnings and all confirmations)
+    -q                  ${c}quiet${e} (suppress minor warnings and all confirmations)
 
-${c}Primary actions${e}
-btwrap -S
-    ${c}snapshot${e} every accessible subvolume that contains a '.snapshots' subvolume
-btwrap -D
-    ${r}delete${e} the oldest snapshot from each detected '.snapshots' subvolume
-btwrap -L
-    ${c}list${e} all snapshots accessible from /
-        -d       additionally poll for ${c}disk usage${e} summary of each '.snapshots' subvolume
+${c}Actions${e}
+    -C <subvolume>      ${c}create${e} a subvolume '.snapshots' under specified subvolume
+    -S                  ${c}snapshot${e} every subvolume that contains a '.snapshots' subvolume
+    -D                  ${r}delete${e} the oldest snapshot from each '.snapshots' subvolume
+    -L                  ${c}list${e} all snapshots
+    -d                  poll for ${c}disk usage${e} summary of each '.snapshots' subvolume
+    -G                  update ${c}grub${e} (for grub-btrfs)
 ${c}Options${e}
-    -m <path>    specify the subvolume instead of searching
-    -n <name>    specify the name of the snapshot to be created/deleted
+    -m <path>           specify the subvolume instead of searching (for D,S,d)
 
-${c}Secondary actions${e}
-btwrap -C <subvolume>
-    create a subvolume '.snapshots' under specified subvolume
-
-Action order: list > create > delete > snapshot
+Action order: list > create > delete > snapshot > grub
 ${c}Example usage:${e}
 btwrap -C /home     # creates subvolume /home/.snapshots
 btwrap -Sm /home    # snapshots /home subvolume into /home/.snapshots/<name>
-btwrap -SD          # for each visible '.snapshots' subvolume: delete the oldest snapshot within and then snapshot the parent subvolume into it
+btwrap -SD          # for each '.snapshots' subvolume: delete the oldest snapshot within and then snapshot the parent subvolume into it
 ";}
 
-sfd(){ # shorthand for constantly used fd command
+sfd(){
 fd -HF ".snapshots" /
 }
-chk_dups(){ # for making sure there are no nested subvolumes in $i
-[ $(echo $i | awk -F "snapshots" '{print NF-1}') -lt 2 ]
+chk_dups(){ # returns true if there are no nested subvolumes in $i
+[ "$(echo "$i" | awk -F "snapshots" '{print NF-1}')" -lt 2 ]
 }
 
 printf "$r"
-while getopts m:LdC:Sn:Dq flag; do
+while getopts m:LdC:Sn:DqG flag; do
     case "${flag}" in
             q) quiet=true;;
+        C) create=${OPTARG};;
         S) snapshot=true;;
         D) delete=true;;
         L) list=true;;
         d) du=true;;
+        G) grub=true;;
             m) path=${OPTARG};;
-            n) name=${OPTARG};;
-
-            C) create=${OPTARG};;
         *) print_usage
             exit 1 ;;
     esac
 done
 printf "$e"
 
+
 if [ "$list" = true ]; then
-    if [ -z $path ]; then   # if $path is empty
+    if [ -z "$path" ]; then   # if $path is empty
         sudo btrfs subv list -st /
     else
-        sudo btrfs subv list -st $path
+        sudo btrfs subv list -st "$path"
     fi
 fi
 if [ "$du" = "true" ]; then
     [ ! "$quiet" = "true" ] && printf "${c}be patient please! this may take a while:${e}\n"
-    if [ -z $path ]; then
+    if [ -z "$path" ]; then
         for i in $(sfd); do
-            chk_dups && sudo btrfs filesystem du -s $i
+            chk_dups && sudo btrfs filesystem du -s "$i"
         done
     else
-        sudo btrfs filesystem du -s $path/.snapshots
+        sudo btrfs filesystem du -s "$path/.snapshots"
     fi
 fi
+
 
 if [ -n "$create" ]; then
-    sudo btrfs subv create $create/.snapshots # prints "ERROR: Could not create subvolume: File exists" if there's something else already there
+
+    # if $create is NOT a btrfs subvolume but is still on a btrfs filesystem
+    if [ ! "$(stat --format=%i "$create")" -eq 256 ] && [ "$(stat -f --format=%T "$create")" = "btrfs" ] ; then
+        sudo mv "$create" "$create.old" || exit # tries to move $create to a subdirectory of itself if it ends in a "/"
+        sudo btrfs subv create "$create" || exit
+        sudo chown "$USER" "$create" || exit
+        sudo mv "$create".old/* "$create/" || exit
+        sudo rm -rf "$create.old"
+    fi
+
+    sudo btrfs subv create "$create/.snapshots" # prints "ERROR: Could not create subvolume: File exists" if there's something else already there
 fi
+
 
 if [ "$delete" = true ]; then
-    if [ -z $name ] && [ -z $path ]; then   # if $name & $path are empty
+    if [ -z "$path" ]; then   # $path is empty
         for i in $(sfd); do
-            chk_dups && sudo btrfs subv delete ${i}$(echo $(sudo ls -t --time creation $i) | awk '{print $1}')
+            chk_dups && sudo btrfs subv delete "${i}$(sudo ls -t --time creation "$i" | awk '{print $1}')"
         done
-    elif [ -z $path ]; then
-        for i in $(sfd); do
-            chk_dups && sudo btrfs subv delete ${i}$name
-        done
-    elif [ -z $name ]; then
-        sudo btrfs subv delete ${path}/.snapshots/$(echo $(sudo ls -t --time creation $path/.snapshots) | awk '{print $1}')
     else
-        sudo btrfs subv delete ${path}/.snapshots/$name
+        sudo btrfs subv delete "${path}/.snapshots/$(sudo ls -t --time creation "$path/.snapshots" | awk '{print $1}')"
     fi
 fi
 
-if [ "$snapshot" = true ]; then
-    if [ -z $name ]; then   # if name is empty (try getting a word)
-        rand=$(dd if=/dev/urandom count=1 2> /dev/null | cksum | cut -d' ' -f1)
-        if [ -r $dict_path ]; then  # if $dict_path DOES exist and is readable
-            name=$(shuf -n 1 $dict_path)$rand
 
-        else
-            [ ! "$quiet" = "true" ] && printf "${c}Unreadable or DNE: ${dict_path} falling back to just random int${e}\n"
-            name=$rand
-        fi
+if [ "$snapshot" = true ]; then
+    rand=$(dd if=/dev/urandom count=1 2> /dev/null | cksum | cut -d' ' -f1)
+
+    if [ -r $dict_path ]; then  # if $dict_path DOES exist and is readable
+        name=$(shuf -n 1 $dict_path)$rand
+    else
+        [ ! "$quiet" = "true" ] && printf "${c}Unreadable or DNE: ${dict_path} falling back to just random int${e}\n"
+        name=$rand
     fi
 
-    if [ -z $path ]; then   # if $path is empty
+
+    if [ -z "$path" ]; then   # if $path is empty
         for i in $(sfd); do
-            chk_dups && sudo btrfs subv snap -r $i../ $i$name
+            chk_dups && sudo btrfs subv snap -r "$i../" "$i$name"
         done
     else
-        sudo btrfs subv snap -r $path $path/.snapshots/$name
+        sudo btrfs subv snap -r "$path" "$path/.snapshots/$name"
     fi
+fi
+
+if [ "$grub" = "true" ]; then
+    sudo grub-mkconfig -o /boot/grub/grub.cfg
 fi
 
