@@ -90,10 +90,10 @@ fi
 if [ "$delete" = true ]; then
     if [ -z "$path" ]; then   # $path is empty
         for i in $(sfd); do
-            chk_dups && sudo btrfs subv delete "${i}$(echo $(sudo ls -t --time creation "$i") | awk '{print $1}')"
+            chk_dups && sudo btrfs subv delete "${i}$(sudo ls -t --time creation "$i" | awk '{print $1}')"
         done
     else
-        sudo btrfs subv delete "${path}/.snapshots/$(echo $(sudo ls -t --time creation "$path/.snapshots") | awk '{print $1}')"
+        sudo btrfs subv delete "${path}/.snapshots/$(sudo ls -t --time creation "$path/.snapshots" | awk '{print $1}')"
     fi
 fi
 
