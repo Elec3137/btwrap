@@ -21,7 +21,7 @@ paru -S btwrap-git
 
 ### Generic
 ```sh
-cd /tmp && git clone https://github.com/Elec3137/btwrap.git && cd ./btwrap && sudo cp btwrap /bin/
+cd /tmp && git clone https://github.com/Elec3137/btwrap.git && cd ./btwrap && sudo cp btwrap /usr/bin/
 
 # to install the systemd unit files afterwards
 sudo cp btwrap.timer /etc/systemd/system/ && sudo cp btwrap.service /etc/systemd/system/
