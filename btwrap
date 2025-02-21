@@ -25,7 +25,7 @@ Action order: list > create > delete > snapshot > grub
 ${c}Example usage:${e}
 btwrap -C /home     # creates subvolume /home/.snapshots
 btwrap -Sm /home    # snapshots /home subvolume into /home/.snapshots/<name>
-btwrap -SD          # for each visible '.snapshots' subvolume: delete the oldest snapshot within and then snapshot the parent subvolume into it
+btwrap -SD          # for each '.snapshots' subvolume: delete the oldest snapshot within and then snapshot the parent subvolume into it
 ";}
 
 sfd(){
