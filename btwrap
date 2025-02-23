@@ -28,11 +28,8 @@ btwrap -Sm /home    # snapshots /home subvolume into /home/.snapshots/<name>
 btwrap -SD          # for each '.snapshots' subvolume: delete the oldest snapshot within and then snapshot the parent subvolume into it
 ";}
 
-sfd(){
-fd -HF ".snapshots" /
-}
-chk_dups(){ # returns true if there are no nested subvolumes in $i
-[ "$(echo "$i" | awk -F "snapshots" '{print NF-1}')" -lt 2 ]
+sfd(){  # finds only toplevel directories with the name ".snapshots"
+sudo find / -name .snapshots -prune -name ".snapshots" 2>/dev/null
 }
 
 printf "$r"
@@ -64,7 +61,7 @@ if [ "$du" = "true" ]; then
     [ ! "$quiet" = "true" ] && printf "${c}be patient please! this may take a while:${e}\n"
     if [ -z "$path" ]; then
         for i in $(sfd); do
-            chk_dups && sudo btrfs filesystem du -s "$i"
+            sudo btrfs filesystem du -s "$i"
         done
     else
         sudo btrfs filesystem du -s "$path/.snapshots"
@@ -90,7 +87,7 @@ fi
 if [ "$delete" = true ]; then
     if [ -z "$path" ]; then   # $path is empty
         for i in $(sfd); do
-            chk_dups && sudo btrfs subv delete "${i}$(echo $(sudo ls -t --time creation "$i") | awk '{print $1}')"
+            sudo btrfs subv delete "${i}$(echo $(sudo ls -t --time creation "$i") | awk '{print $1}')"
         done
     else
         sudo btrfs subv delete "${path}/.snapshots/$(echo $(sudo ls -t --time creation "$path/.snapshots") | awk '{print $1}')"
@@ -111,7 +108,7 @@ if [ "$snapshot" = true ]; then
 
     if [ -z "$path" ]; then   # if $path is empty
         for i in $(sfd); do
-            chk_dups && sudo btrfs subv snap -r "$i../" "$i$name"
+            sudo btrfs subv snap -r "$i../" "$i/$name"
         done
     else
         sudo btrfs subv snap -r "$path" "$path/.snapshots/$name"
