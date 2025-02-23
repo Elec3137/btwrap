@@ -57,7 +57,7 @@ if [ "$list" = true ]; then
     if [ -z "$path" ]; then   # if $path is empty
         sudo btrfs subv list -st /
     else
-        sudo btrfs subv list -st "$path"
+        sudo btrfs subv list -sto "$path"
     fi
 fi
 if [ "$du" = "true" ]; then
