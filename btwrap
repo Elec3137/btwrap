@@ -86,10 +86,11 @@ fi
 
 
 if [ "$delete" = true ]; then
+    # setting of (deletion) $target needs a weird "echo" (to output it all at once to awk?)
+    # and echoed command MUST not be in double quotes (why?)
+
     if [ -z "$path" ]; then   # $path is empty
         for i in $(sfd); do
-            # needs a weird "echo" (to output it all at once to awk?)
-            # echoed command MUST not be in double quotes (why?)
             target=$(echo $(sudo ls -t --time creation "$i") | awk '{print $1}')
 
             if [ -n "$target" ]; then
@@ -99,8 +100,6 @@ if [ "$delete" = true ]; then
             fi
         done
     else
-        # needs a weird "echo" (to output it all at once to awk?)
-        # echoed command MUST not be in double quotes (why?)
         target=$(echo $(sudo ls -t --time creation "$path/.snapshots") | awk '{print $1}')
 
         if [ -n "$target" ]; then
