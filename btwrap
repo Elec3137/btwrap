@@ -95,7 +95,7 @@ if [ "$delete" = true ]; then
             if [ -n "$target" ]; then
                 sudo btrfs subv delete "${i}/$target"
             else
-                [ ! "$quiet" = "true" ] && printf "${c}no snapshots to delete in '$i', skipping deletion of:${e} ${i}/$target\n"
+                [ ! "$quiet" = "true" ] && printf "${c}no snapshots to delete in '${e}$i${c}', skipping deletion of:${e} ${i}/$target\n"
             fi
         done
     else
@@ -106,7 +106,7 @@ if [ "$delete" = true ]; then
         if [ -n "$target" ]; then
             sudo btrfs subv delete "${path}/.snapshots/$target"
         else
-            [ ! "$quiet" = "true" ] && printf "${c}no snapshots to delete in '$path/.snapshots/', skipping deletion of:${e} ${path}/.snapshots/$target\n"
+            [ ! "$quiet" = "true" ] && printf "${c}no snapshots to delete in '${e}$path/.snapshots/${c}', skipping deletion of:${e} ${path}/.snapshots/$target\n"
         fi
     fi
 fi
