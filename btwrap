@@ -88,10 +88,26 @@ fi
 if [ "$delete" = true ]; then
     if [ -z "$path" ]; then   # $path is empty
         for i in $(sfd); do
-            sudo btrfs subv delete "${i}/$(echo $(sudo ls -t --time creation "$i") | awk '{print $1}')"
+            # needs a weird "echo" (to output it all at once to awk?)
+            # echoed command MUST not be in double quotes (why?)
+            target=$(echo $(sudo ls -t --time creation "$i") | awk '{print $1}')
+
+            if [ -n "$target" ]; then
+                sudo btrfs subv delete "${i}/$target"
+            else
+                [ ! "$quiet" = "true" ] && printf "${c}no snapshots to delete in '$i', skipping deletion of:${e} ${i}/$target\n"
+            fi
         done
     else
-        sudo btrfs subv delete "${path}/.snapshots/$(echo $(sudo ls -t --time creation "$path/.snapshots") | awk '{print $1}')"
+        # needs a weird "echo" (to output it all at once to awk?)
+        # echoed command MUST not be in double quotes (why?)
+        target=$(echo $(sudo ls -t --time creation "$path/.snapshots") | awk '{print $1}')
+
+        if [ -n "$target" ]; then
+            sudo btrfs subv delete "${path}/.snapshots/$target"
+        else
+            [ ! "$quiet" = "true" ] && printf "${c}no snapshots to delete in '$path/.snapshots/', skipping deletion of:${e} ${path}/.snapshots/$target\n"
+        fi
     fi
 fi
 
