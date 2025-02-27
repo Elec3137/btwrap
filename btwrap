@@ -29,8 +29,11 @@ btwrap -SD          # for each '.snapshots' subvolume: delete the oldest snapsho
 ";}
 
 sfd(){  # finds only toplevel directories with the name ".snapshots"
+
 #sudo find / -name .snapshots -prune -name ".snapshots" 2>/dev/null
-fd -H "\.snapshots" / | grep -vE "/.snapshots/.*.snapshots/"
+#fd -H "\.snapshots" / | grep -vE "/.snapshots/.*.snapshots/"
+
+sudo btrfs subv list / | grep snapshots$ | cut -d " " -f 9 | cut -d '@' -f 2
 }
 
 printf "$r"
@@ -91,12 +94,12 @@ if [ "$delete" = true ]; then
 
     if [ -z "$path" ]; then   # $path is empty
         for i in $(sfd); do
-            target=$(echo $(sudo ls -t --time creation "$i") | awk '{print $1}')
+            target=$(echo $(sudo ls -t --time creation "/$i") | awk '{print $1}')
 
             if [ -n "$target" ]; then
-                sudo btrfs subv delete "${i}/$target"
+                sudo btrfs subv delete "/${i}/$target"
             else
-                [ ! "$quiet" = "true" ] && printf "${c}no snapshots to delete in '${e}$i${c}', skipping deletion of:${e} ${i}/$target\n"
+                [ ! "$quiet" = "true" ] && printf "${c}no snapshots to delete in '${e}/$i${c}', skipping deletion of:${e} /${i}/$target\n"
             fi
         done
     else
@@ -124,7 +127,7 @@ if [ "$snapshot" = true ]; then
 
     if [ -z "$path" ]; then   # if $path is empty
         for i in $(sfd); do
-            sudo btrfs subv snap -r "$i/../" "$i/$name"
+            sudo btrfs subv snap -r "/$i/../" "/$i/$name"
         done
     else
         sudo btrfs subv snap -r "$path" "$path/.snapshots/$name"
