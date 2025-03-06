@@ -36,6 +36,21 @@ sfd(){  # finds only toplevel directories with the name ".snapshots"
 sudo btrfs subv list / | grep snapshots$ | cut -d " " -f 9 | cut -d '@' -f 2
 }
 
+subvConvert() {
+if [ -n "$1" ]; then
+
+    # if $create is NOT a btrfs subvolume but is still on a btrfs filesystem
+    if [ ! "$(stat --format=%i "$create")" -eq 256 ] && [ "$(stat -f --format=%T "$create")" = "btrfs" ] ; then
+        sudo mv "$create" "$create.old" || exit # tries to move $create to a subdirectory of itself if it ends in a "/"
+        sudo btrfs subv create "$create" || exit
+        sudo chown "$USER" "$create" || exit
+        sudo mv "$create".old/* "$create/" || exit
+        sudo rm -rf "$create.old"
+    fi
+
+fi
+}
+
 printf "$r"
 while getopts m:LdC:Sn:DqG flag; do
     case "${flag}" in
@@ -75,14 +90,7 @@ fi
 
 if [ -n "$create" ]; then
 
-    # if $create is NOT a btrfs subvolume but is still on a btrfs filesystem
-    if [ ! "$(stat --format=%i "$create")" -eq 256 ] && [ "$(stat -f --format=%T "$create")" = "btrfs" ] ; then
-        sudo mv "$create" "$create.old" || exit # tries to move $create to a subdirectory of itself if it ends in a "/"
-        sudo btrfs subv create "$create" || exit
-        sudo chown "$USER" "$create" || exit
-        sudo mv "$create".old/* "$create/" || exit
-        sudo rm -rf "$create.old"
-    fi
+    subvConvert "$create"
 
     sudo btrfs subv create "$create/.snapshots" # prints "ERROR: Could not create subvolume: File exists" if there's something else already there
 fi
