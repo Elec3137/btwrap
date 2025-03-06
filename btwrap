@@ -47,6 +47,9 @@ if [ -n "$1" ]; then
         sudo chown "$USER" "$create" || exit
         sudo mv "$create".old/* "$create/" || exit
         sudo rm -rf "$create.old"
+    else
+        [ ! "$quiet" = "true" ] && printf "${c}directory > subvolume conversion target is invalid${e}"
+        exit
     fi
 
 fi
@@ -70,9 +73,7 @@ while getopts m:LdC:Sn:DqGE: flag; do
 done
 printf "$e"
 
-if [ -n "$exclude" ]; then
-    subvConvert $exclude
-fi
+subvConvert "$exclude"
 
 if [ "$list" = true ]; then
     if [ -z "$path" ]; then   # if $path is empty
