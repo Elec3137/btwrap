@@ -65,7 +65,7 @@ if [ "$du" = "true" ]; then
     [ ! "$quiet" = "true" ] && printf "${c}be patient please! this may take a while:${e}\n"
     if [ -z "$path" ]; then
         for i in $(sfd); do
-            sudo btrfs filesystem du -s "$i"
+            sudo btrfs filesystem du -s "/$i"
         done
     else
         sudo btrfs filesystem du -s "$path/.snapshots"
