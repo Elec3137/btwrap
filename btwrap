@@ -94,7 +94,7 @@ if [ "$delete" = true ]; then
 
     if [ -z "$path" ]; then   # $path is empty
         for i in $(sfd); do
-            target=$(echo $(sudo ls -t --time creation "/$i") | awk '{print $1}')
+            target=$(echo $(sudo ls -t --time creation "/$i") | awk '{print $NF}')
 
             if [ -n "$target" ]; then
                 sudo btrfs subv delete "/${i}/$target"
@@ -103,7 +103,7 @@ if [ "$delete" = true ]; then
             fi
         done
     else
-        target=$(echo $(sudo ls -t --time creation "$path/.snapshots") | awk '{print $1}')
+        target=$(echo $(sudo ls -t --time creation "$path/.snapshots") | awk '{print $NF}')
 
         if [ -n "$target" ]; then
             sudo btrfs subv delete "${path}/.snapshots/$target"
