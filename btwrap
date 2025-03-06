@@ -18,10 +18,11 @@ ${c}Actions${e}
     -L                  ${c}list${e} all snapshots
     -d                  poll for ${c}disk usage${e} summary of each '.snapshots' subvolume
     -G                  update ${c}grub${e} (for grub-btrfs)
+    -E <directory>      ${c}exclude${e} from any parent snapshots by converting target into a subvolume
 ${c}Options${e}
     -m <path>           specify the subvolume instead of searching (for D,S,d)
 
-Action order: list > create > delete > snapshot > grub
+Action order: exclude > list > disk usage > create > delete > snapshot > grub
 ${c}Example usage:${e}
 btwrap -C /home     # creates subvolume /home/.snapshots
 btwrap -Sm /home    # snapshots /home subvolume into /home/.snapshots/<name>
@@ -52,7 +53,7 @@ fi
 }
 
 printf "$r"
-while getopts m:LdC:Sn:DqG flag; do
+while getopts m:LdC:Sn:DqGE: flag; do
     case "${flag}" in
             q) quiet=true;;
         C) create=${OPTARG};;
@@ -61,6 +62,7 @@ while getopts m:LdC:Sn:DqG flag; do
         L) list=true;;
         d) du=true;;
         G) grub=true;;
+        E) exclude=${OPTARG};;
             m) path=${OPTARG};;
         *) print_usage
             exit 1 ;;
@@ -68,6 +70,9 @@ while getopts m:LdC:Sn:DqG flag; do
 done
 printf "$e"
 
+if [ -n "$exclude" ]; then
+    subvConvert $exclude
+fi
 
 if [ "$list" = true ]; then
     if [ -z "$path" ]; then   # if $path is empty
