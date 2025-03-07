@@ -9,18 +9,18 @@ print_usage(){
 printf "${c}Shell wrapper for btrfs snapshots (creation, cleanup, space usage polling)${e}
 
 ${c}Global options${e}
-    -q                  ${c}quiet${e} (suppress minor warnings and all confirmations)
+    -q            ${c}quiet${e} (suppress minor warnings and all confirmations)
 
 ${c}Actions${e}
-    -C <subvolume>      ${c}create${e} a subvolume '.snapshots' under specified subvolume
-    -S                  ${c}snapshot${e} every subvolume that contains a '.snapshots' subvolume
-    -D                  ${r}delete${e} the oldest snapshot from each '.snapshots' subvolume
-    -L                  ${c}list${e} all snapshots
-    -d                  poll for ${c}disk usage${e} summary of each '.snapshots' subvolume
-    -G                  update ${c}grub${e} (for grub-btrfs)
-    -E <directory>      ${c}exclude${e} from any parent snapshots by converting target into a subvolume
+    -C <dir>      ${c}create${e} a subvolume '.snapshots' under specified subvolume
+    -S            ${c}snapshot${e} every subvolume that contains a '.snapshots' subvolume
+    -D            ${r}delete${e} the oldest snapshot from each '.snapshots' subvolume
+    -L            ${c}list${e} all snapshots
+    -d            poll for ${c}disk usage${e} summary of each '.snapshots' subvolume
+    -G            update ${c}grub${e} (for grub-btrfs)
+    -E <dir>      ${c}exclude${e} from any parent snapshots by converting target into a subvolume
 ${c}Options${e}
-    -m <path>           specify the subvolume instead of searching (for D,S,d)
+    -m <path>     specify the subvolume instead of searching (for D,S,d)
 
 Action order: exclude > list > disk usage > create > delete > snapshot > grub
 ${c}Example usage:${e}
