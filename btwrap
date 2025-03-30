@@ -73,6 +73,10 @@ while getopts m:LUC:Sn:DqGE: flag; do
 done
 printf "$e"
 
+if [ -z "$PS1" ] && [ -z "$quiet" ]; then
+    printf "Non-interactive, changing to quiet\n" && quiet=true
+fi
+
 subvConvert "$exclude"
 
 if [ "$list" = true ]; then
