@@ -16,11 +16,11 @@ ${c}Actions${e}
     -S            ${c}snapshot${e} every subvolume that contains a '.snapshots' subvolume
     -D            ${r}delete${e} the oldest snapshot from each '.snapshots' subvolume
     -L            ${c}list${e} all snapshots
-    -d            poll for ${c}disk usage${e} summary of each '.snapshots' subvolume
+    -U            poll for ${c}disk usage${e} summary of each '.snapshots' subvolume
     -G            update ${c}grub${e} (for grub-btrfs)
     -E <dir>      ${c}exclude${e} from any parent snapshots by converting target into a subvolume
 ${c}Options${e}
-    -m <path>     specify the subvolume instead of searching (for D,S,d)
+    -m <path>     specify the subvolume instead of searching (for actions D,S,d)
 
 Action order: exclude > list > disk usage > create > delete > snapshot > grub
 ${c}Example usage:${e}
@@ -56,14 +56,14 @@ fi
 }
 
 printf "$r"
-while getopts m:LdC:Sn:DqGE: flag; do
+while getopts m:LUC:Sn:DqGE: flag; do
     case "${flag}" in
             q) quiet=true;;
         C) create=${OPTARG};;
         S) snapshot=true;;
         D) delete=true;;
         L) list=true;;
-        d) du=true;;
+        U) du=true;;
         G) grub=true;;
         E) exclude=${OPTARG};;
             m) path=${OPTARG};;
