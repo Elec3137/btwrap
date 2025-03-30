@@ -111,6 +111,16 @@ if [ "$delete" = true ]; then
             target=$(echo $(sudo ls -t --time creation "/$i") | awk '{print $NF}')
 
             if [ -n "$target" ]; then
+                if [ ! "$quiet" = "true" ] && [ ! "$all" = "true" ]; then
+                    printf "Delete '/${i}/$target'? [Y/n/all] "
+                    read response
+                    case "$response" in
+                        y|Y|yes|Yes|'' );;
+                        n|N|no|No ) exit;;
+                        all ) all=true;;
+                        * ) exit;;
+                    esac
+                fi
                 sudo btrfs subv delete "/${i}/$target"
             else
                 [ ! "$quiet" = "true" ] && printf "${c}no snapshots to delete in '${e}/$i${c}', skipping deletion of:${e} /${i}/$target\n"
@@ -120,6 +130,16 @@ if [ "$delete" = true ]; then
         target=$(echo $(sudo ls -t --time creation "$path/.snapshots") | awk '{print $NF}')
 
         if [ -n "$target" ]; then
+            if [ ! "$quiet" = "true" ] && [ ! "$all" = "true" ]; then
+                printf "Delete '${path}/.snapshots/$target'? [Y/n] "
+                read response
+                case "$response" in
+                    y|Y|yes|Yes|'' );;
+                    n|N|no|No ) exit;;
+                    * ) exit;;
+                esac
+            fi
+
             sudo btrfs subv delete "${path}/.snapshots/$target"
         else
             [ ! "$quiet" = "true" ] && printf "${c}no snapshots to delete in '${e}$path/.snapshots/${c}', skipping deletion of:${e} ${path}/.snapshots/$target\n"
