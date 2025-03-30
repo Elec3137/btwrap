@@ -2,7 +2,7 @@
 Description=for each visible '.snapshots' subvolume: delete the oldest snapshot within and then snapshot the parent subvolume into it
 
 [Service]
-ExecStart=/bin/btwrap -SD
+ExecStart=/bin/btwrap -SDq
 
 [Install]
 WantedBy=multi-user.target
