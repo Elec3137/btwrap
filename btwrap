@@ -113,7 +113,7 @@ if [ "$delete" = true ]; then
             if [ -n "$target" ]; then
                 if [ ! "$quiet" = "true" ] && [ ! "$all" = "true" ]; then
                     printf "Delete '/${i}/$target'? [Y/n/all] "
-                    read response
+                    read -r response
                     case "$response" in
                         y|Y|yes|Yes|'' );;
                         n|N|no|No ) exit;;
