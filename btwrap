@@ -57,7 +57,7 @@ subvConvert() {
 
 snapDelete() {
     # setting of (deletion) $target needs a weird "echo" (to output it all at once to awk?)
-    # and echoed command MUST not be in double quotes (why?)
+    # and echoed command MUST NOT be in double quotes (why?)
 
     if [ -z "$path" ]; then    # $path is empty
         for i in $(sfd); do
