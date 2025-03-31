@@ -101,23 +101,21 @@ snapDelete() {
     fi
 }
 
-printf "$r"
 while getopts m:LUC:Sn:DqGE: flag; do
     case "${flag}" in
+            m) path=${OPTARG};;
             q) quiet=true;;
         C) create=${OPTARG};;
         S) snapshot=true;;
-        D) delete=true;;
+        D) snapDelete;;
         L) list=true;;
         U) du=true;;
         G) grub=true;;
         E) exclude=${OPTARG};;
-            m) path=${OPTARG};;
-        *) print_usage
+        *) printf "\n" && print_usage
             exit 1 ;;
     esac
 done
-printf "$e"
 
 subvConvert "$exclude"
 
@@ -145,11 +143,6 @@ if [ -n "$create" ]; then
     subvConvert "$create"
 
     sudo btrfs subv create "$create/.snapshots" # prints "ERROR: Could not create subvolume: File exists" if there's something else already there
-fi
-
-
-if [ "$delete" = true ]; then
-    snapDelete
 fi
 
 
