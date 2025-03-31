@@ -39,14 +39,15 @@ sudo btrfs subv list / | grep snapshots$ | cut -d " " -f 9 | cut -d '@' -f 2
 
 subvConvert() {
     if [ -n "$1" ]; then
+        convTarget=$1
 
-        # if $create is NOT a btrfs subvolume but is still on a btrfs filesystem
-        if [ ! "$(stat --format=%i "$create")" -eq 256 ] && [ "$(stat -f --format=%T "$create")" = "btrfs" ] ; then
-            sudo mv "$create" "$create.old" || exit # tries to move $create to a subdirectory of itself if it ends in a "/"
-            sudo btrfs subv create "$create" || exit
-            sudo chown "$USER" "$create" || exit
-            sudo mv "$create".old/* "$create/" || exit
-            sudo rm -rf "$create.old"
+        # if $convTarget is NOT a btrfs subvolume but is still on a btrfs filesystem
+        if [ ! "$(stat --format=%i "$convTarget")" -eq 256 ] && [ "$(stat -f --format=%T "$convTarget")" = "btrfs" ] ; then
+            sudo mv "$convTarget" "$convTarget.old" || exit # tries to move $convTarget to a subdirectory of itself if it ends in a "/"
+            sudo btrfs subv create "$convTarget" || exit
+            sudo chown "$USER" "$convTarget" || exit
+            sudo mv "$convTarget".old/* "$convTarget/" || exit
+            sudo rm -rf "$convTarget.old"
         else
             [ ! "$quiet" = "true" ] && printf "${c}directory -> subvolume conversion target is invalid${e}"
             exit
