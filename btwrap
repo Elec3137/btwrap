@@ -38,21 +38,66 @@ sudo btrfs subv list / | grep snapshots$ | cut -d " " -f 9 | cut -d '@' -f 2
 }
 
 subvConvert() {
-if [ -n "$1" ]; then
+    if [ -n "$1" ]; then
 
-    # if $create is NOT a btrfs subvolume but is still on a btrfs filesystem
-    if [ ! "$(stat --format=%i "$create")" -eq 256 ] && [ "$(stat -f --format=%T "$create")" = "btrfs" ] ; then
-        sudo mv "$create" "$create.old" || exit # tries to move $create to a subdirectory of itself if it ends in a "/"
-        sudo btrfs subv create "$create" || exit
-        sudo chown "$USER" "$create" || exit
-        sudo mv "$create".old/* "$create/" || exit
-        sudo rm -rf "$create.old"
-    else
-        [ ! "$quiet" = "true" ] && printf "${c}directory > subvolume conversion target is invalid${e}"
-        exit
+        # if $create is NOT a btrfs subvolume but is still on a btrfs filesystem
+        if [ ! "$(stat --format=%i "$create")" -eq 256 ] && [ "$(stat -f --format=%T "$create")" = "btrfs" ] ; then
+            sudo mv "$create" "$create.old" || exit # tries to move $create to a subdirectory of itself if it ends in a "/"
+            sudo btrfs subv create "$create" || exit
+            sudo chown "$USER" "$create" || exit
+            sudo mv "$create".old/* "$create/" || exit
+            sudo rm -rf "$create.old"
+        else
+            [ ! "$quiet" = "true" ] && printf "${c}directory -> subvolume conversion target is invalid${e}"
+            exit
+        fi
+
     fi
+}
 
-fi
+snapDelete() {
+    # setting of (deletion) $target needs a weird "echo" (to output it all at once to awk?)
+    # and echoed command MUST not be in double quotes (why?)
+
+    if [ -z "$path" ]; then    # $path is empty
+        for i in $(sfd); do
+            target=$(echo $(sudo ls -t --time creation "/$i") | awk '{print $NF}')
+
+            if [ -n "$target" ]; then
+                if [ ! "$quiet" = "true" ] && [ ! "$all" = "true" ]; then
+                    printf "Delete '/${i}/$target'? [Y/n/all] "
+                    read -r response
+                    case "$response" in
+                        y|Y|yes|Yes|'' );;
+                        n|N|no|No ) return;;
+                        all ) all=true;;
+                        * ) return;;
+                    esac
+                fi
+                sudo btrfs subv delete "/${i}/$target"
+            else
+                [ ! "$quiet" = "true" ] && printf "${c}no snapshots to delete in '${e}/$i${c}', skipping deletion of:${e} /${i}/$target\n"
+            fi
+        done
+    else
+        target=$(echo $(sudo ls -t --time creation "$path/.snapshots") | awk '{print $NF}')
+
+        if [ -n "$target" ]; then
+            if [ ! "$quiet" = "true" ] && [ ! "$all" = "true" ]; then
+                printf "Delete '${path}/.snapshots/$target'? [Y/n] "
+                read -r response
+                case "$response" in
+                    y|Y|yes|Yes|'' );;
+                    n|N|no|No ) return;;
+                    * ) return;;
+                esac
+            fi
+
+            sudo btrfs subv delete "${path}/.snapshots/$target"
+        else
+            [ ! "$quiet" = "true" ] && printf "${c}no snapshots to delete in '${e}$path/.snapshots/${c}', skipping deletion of:${e} ${path}/.snapshots/$target\n"
+        fi
+    fi
 }
 
 printf "$r"
@@ -103,48 +148,7 @@ fi
 
 
 if [ "$delete" = true ]; then
-    # setting of (deletion) $target needs a weird "echo" (to output it all at once to awk?)
-    # and echoed command MUST not be in double quotes (why?)
-
-    if [ -z "$path" ]; then   # $path is empty
-        for i in $(sfd); do
-            target=$(echo $(sudo ls -t --time creation "/$i") | awk '{print $NF}')
-
-            if [ -n "$target" ]; then
-                if [ ! "$quiet" = "true" ] && [ ! "$all" = "true" ]; then
-                    printf "Delete '/${i}/$target'? [Y/n/all] "
-                    read -r response
-                    case "$response" in
-                        y|Y|yes|Yes|'' );;
-                        n|N|no|No ) exit;;
-                        all ) all=true;;
-                        * ) exit;;
-                    esac
-                fi
-                sudo btrfs subv delete "/${i}/$target"
-            else
-                [ ! "$quiet" = "true" ] && printf "${c}no snapshots to delete in '${e}/$i${c}', skipping deletion of:${e} /${i}/$target\n"
-            fi
-        done
-    else
-        target=$(echo $(sudo ls -t --time creation "$path/.snapshots") | awk '{print $NF}')
-
-        if [ -n "$target" ]; then
-            if [ ! "$quiet" = "true" ] && [ ! "$all" = "true" ]; then
-                printf "Delete '${path}/.snapshots/$target'? [Y/n] "
-                read response
-                case "$response" in
-                    y|Y|yes|Yes|'' );;
-                    n|N|no|No ) exit;;
-                    * ) exit;;
-                esac
-            fi
-
-            sudo btrfs subv delete "${path}/.snapshots/$target"
-        else
-            [ ! "$quiet" = "true" ] && printf "${c}no snapshots to delete in '${e}$path/.snapshots/${c}', skipping deletion of:${e} ${path}/.snapshots/$target\n"
-        fi
-    fi
+    snapDelete
 fi
 
 
