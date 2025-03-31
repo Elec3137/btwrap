@@ -5,7 +5,7 @@ e="\033[0m"
 dict_path="/usr/share/dict/cracklib-small"
 
 
-print_usage(){
+print_usage() {
 printf "${c}Shell wrapper for btrfs snapshots (creation, cleanup, space usage polling)${e}
 
 ${c}Global options${e}
@@ -16,20 +16,20 @@ ${c}Actions${e}
     -S            ${c}snapshot${e} every subvolume that contains a '.snapshots' subvolume
     -D            ${r}delete${e} the oldest snapshot from each '.snapshots' subvolume
     -L            ${c}list${e} all snapshots
-    -U            poll for ${c}disk usage${e} summary of each '.snapshots' subvolume
+    -U            poll for disk ${c}usage${e} summary of each '.snapshots' subvolume
     -G            update ${c}grub${e} (for grub-btrfs)
     -E <dir>      ${c}exclude${e} from any parent snapshots by converting target into a subvolume
 ${c}Options${e}
     -m <path>     specify the subvolume instead of searching (for actions D,S,d)
 
-Action order: exclude > list > disk usage > create > delete > snapshot > grub
 ${c}Example usage:${e}
 btwrap -C /home     # creates subvolume /home/.snapshots
 btwrap -Sm /home    # snapshots /home subvolume into /home/.snapshots/<name>
 btwrap -SD          # for each '.snapshots' subvolume: delete the oldest snapshot within and then snapshot the parent subvolume into it
-";}
+"
+}
 
-sfd(){  # finds only toplevel directories with the name ".snapshots"
+sfd() {    # finds only toplevel directories with the name ".snapshots"
 
 #sudo find / -name .snapshots -prune -name ".snapshots" 2>/dev/null
 #fd -H "\.snapshots" / | grep -vE "/.snapshots/.*.snapshots/"
@@ -37,26 +37,32 @@ sfd(){  # finds only toplevel directories with the name ".snapshots"
 sudo btrfs subv list / | grep snapshots$ | cut -d " " -f 9 | cut -d '@' -f 2
 }
 
-subvConvert() {
-    if [ -n "$1" ]; then
-        convTarget=$1
+subvCreate() {    # create
+    subvConvert "$1"
+    sudo btrfs subv create "$1/.snapshots"
+}
 
-        # if $convTarget is NOT a btrfs subvolume but is still on a btrfs filesystem
-        if [ ! "$(stat --format=%i "$convTarget")" -eq 256 ] && [ "$(stat -f --format=%T "$convTarget")" = "btrfs" ] ; then
-            sudo mv "$convTarget" "$convTarget.old" || exit # tries to move $convTarget to a subdirectory of itself if it ends in a "/"
-            sudo btrfs subv create "$convTarget" || exit
-            sudo chown "$USER" "$convTarget" || exit
-            sudo mv "$convTarget".old/* "$convTarget/" || exit
-            sudo rm -rf "$convTarget.old"
-        else
-            [ ! "$quiet" = "true" ] && printf "${c}directory -> subvolume conversion target is invalid${e}"
-            exit
-        fi
+snapTake() {    # snapshot
+    rand=$(dd if=/dev/urandom count=1 2> /dev/null | cksum | cut -d' ' -f1)
 
+    if [ -r $dict_path ]; then  # if $dict_path DOES exist and is readable
+        name=$(shuf -n 1 $dict_path)$rand
+    else
+        [ ! "$quiet" = "true" ] && printf "${c}Unreadable or DNE: ${dict_path} falling back to just random int${e}\n"
+        name=$rand
+    fi
+
+
+    if [ -z "$path" ]; then   # if $path is empty
+        for i in $(sfd); do
+            sudo btrfs subv snap -r "/$i/../" "/$i/$name"
+        done
+    else
+        sudo btrfs subv snap -r "$path" "$path/.snapshots/$name"
     fi
 }
 
-snapDelete() {
+snapDelete() {    # delete
     # setting of (deletion) $target needs a weird "echo" (to output it all at once to awk?)
     # and echoed command MUST NOT be in double quotes (why?)
 
@@ -101,32 +107,15 @@ snapDelete() {
     fi
 }
 
-while getopts m:LUC:Sn:DqGE: flag; do
-    case "${flag}" in
-            m) path=${OPTARG};;
-            q) quiet=true;;
-        C) create=${OPTARG};;
-        S) snapshot=true;;
-        D) snapDelete;;
-        L) list=true;;
-        U) du=true;;
-        G) grub=true;;
-        E) exclude=${OPTARG};;
-        *) printf "\n" && print_usage
-            exit 1 ;;
-    esac
-done
-
-subvConvert "$exclude"
-
-if [ "$list" = true ]; then
+snapList() {    # list
     if [ -z "$path" ]; then   # if $path is empty
         sudo btrfs subv list -st /
     else
         sudo btrfs subv list -sto "$path"
     fi
-fi
-if [ "$du" = "true" ]; then
+}
+
+diskUsage() {    # usage
     [ ! "$quiet" = "true" ] && printf "${c}be patient please! this may take a while:${e}\n"
     if [ -z "$path" ]; then
         for i in $(sfd); do
@@ -135,38 +124,44 @@ if [ "$du" = "true" ]; then
     else
         sudo btrfs filesystem du -s "$path/.snapshots"
     fi
-fi
+}
 
+subvConvert() {    # exclude
+    if [ -n "$1" ]; then
+        convTarget=$1
 
-if [ -n "$create" ]; then
+        # if $convTarget is NOT a btrfs subvolume but is still on a btrfs filesystem
+        if [ ! "$(stat --format=%i "$convTarget")" -eq 256 ] && [ "$(stat -f --format=%T "$convTarget")" = "btrfs" ] ; then
+            sudo mv "$convTarget" "$convTarget.old" || exit # tries to move $convTarget to a subdirectory of itself if it ends in a "/"
+            sudo btrfs subv create "$convTarget" || exit
+            sudo chown "$USER" "$convTarget" || exit
+            sudo mv "$convTarget".old/* "$convTarget/" || exit
+            sudo rm -rf "$convTarget.old"
+        else
+            [ ! "$quiet" = "true" ] && printf "${c}directory -> subvolume conversion target is invalid${e}"
+            exit
+        fi
 
-    subvConvert "$create"
-
-    sudo btrfs subv create "$create/.snapshots" # prints "ERROR: Could not create subvolume: File exists" if there's something else already there
-fi
-
-
-if [ "$snapshot" = true ]; then
-    rand=$(dd if=/dev/urandom count=1 2> /dev/null | cksum | cut -d' ' -f1)
-
-    if [ -r $dict_path ]; then  # if $dict_path DOES exist and is readable
-        name=$(shuf -n 1 $dict_path)$rand
-    else
-        [ ! "$quiet" = "true" ] && printf "${c}Unreadable or DNE: ${dict_path} falling back to just random int${e}\n"
-        name=$rand
     fi
+}
 
+while getopts m:LUC:Sn:DqGE: flag; do
+    case "${flag}" in
+            m) path=${OPTARG};;
+            q) quiet=true;;
 
-    if [ -z "$path" ]; then   # if $path is empty
-        for i in $(sfd); do
-            sudo btrfs subv snap -r "/$i/../" "/$i/$name"
-        done
-    else
-        sudo btrfs subv snap -r "$path" "$path/.snapshots/$name"
-    fi
-fi
+        C) subvCreate "${OPTARG}";;
+        S) snapTake;;
+        D) snapDelete;;
+        L) snapList;;
+        U) diskUsage;;
+        E) subvConvert "${OPTARG}";;
 
-if [ "$grub" = "true" ]; then
-    sudo grub-mkconfig -o /boot/grub/grub.cfg
-fi
+        G) sudo grub-mkconfig -o /boot/grub/grub.cfg;;
+
+        *) printf "\n"
+            print_usage
+            exit 1 ;;
+    esac
+done
 
