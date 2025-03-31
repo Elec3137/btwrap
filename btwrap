@@ -145,8 +145,18 @@ subvConvert() {    # exclude
     fi
 }
 
-while getopts m:LUC:Sn:DqGE: flag; do
-    case "${flag}" in
+optstring="m:LUC:Sn:DqGE:"
+while getopts $optstring option; do
+    case "$option" in
+        m) path=${OPTARG};;
+        q) quiet=true;;
+    esac
+done
+
+OPTIND=1
+
+while getopts $optstring option; do
+    case "$option" in
             m) path=${OPTARG};;
             q) quiet=true;;
 
