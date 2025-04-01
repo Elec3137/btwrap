@@ -157,8 +157,7 @@ OPTIND=1
 
 while getopts $optstring option; do
     case "$option" in
-            m) path=${OPTARG};;
-            q) quiet=true;;
+            m|q);;
 
         C) subvCreate "${OPTARG}";;
         S) snapTake;;
