@@ -155,8 +155,8 @@ done
 
 OPTIND=1
 
-while getopts $optstring option; do
-    case "$option" in
+while getopts $optstring action; do
+    case "$action" in
             m|q);;
 
         C) subvCreate "${OPTARG}";;
