@@ -75,13 +75,13 @@ snapDelete() {    # delete
             target=$(echo $(sudo ls -t --time creation "/$i") | awk '{print $NF}')
 
             if [ -n "$target" ]; then
-                if [ ! "$quiet" = "true" ] && [ ! "$all" = "true" ]; then
+                if [ ! "$quiet" = "true" ] && [ ! "$all_delete" = "true" ]; then
                     printf "Delete '/${i}/$target'? [Y/n/all] "
                     read -r response
                     case "$response" in
                         y|Y|yes|Yes|'' );;
                         n|N|no|No ) return;;
-                        all ) all=true;;
+                        all ) all_delete=true;;
                         * ) return;;
                     esac
                 fi
@@ -136,6 +136,16 @@ subvConvert() {    # exclude
 
         # if $convTarget is NOT a btrfs subvolume but is still on a btrfs filesystem
         if [ ! "$(stat --format=%i "$convTarget")" -eq 256 ] && [ "$(stat -f --format=%T "$convTarget")" = "btrfs" ] ; then
+            if [ ! "$quiet" = "true" ] && [ ! "$all_convert" = "true" ]; then
+                printf "Move '$convTarget' to '$convTarget.old'? [Y/n/all] "
+                read -r response
+                case "$response" in
+                    y|Y|yes|Yes|'' );;
+                    n|N|no|No ) return;;
+                    all ) all_convert=true;;
+                    * ) return;;
+                esac
+            fi
             sudo mv "$convTarget" "$convTarget.old" || exit # tries to move $convTarget to a subdirectory of itself if it ends in a "/"
             sudo btrfs subv create "$convTarget" || exit
             sudo chown "$USER" "$convTarget" || exit
