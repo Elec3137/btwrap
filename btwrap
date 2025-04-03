@@ -137,13 +137,13 @@ subvConvert() {    # exclude
         # if $convTarget is NOT a btrfs subvolume but is still on a btrfs filesystem
         if [ ! "$(stat --format=%i "$convTarget")" -eq 256 ] && [ "$(stat -f --format=%T "$convTarget")" = "btrfs" ] ; then
             if [ ! "$quiet" = "true" ] && [ ! "$all_convert" = "true" ]; then
-                printf "Move '$convTarget' to '$convTarget.old'? [Y/n/all] "
+                printf "Convert '$convTarget' to a subvolume of the same name? [Y/n/all] "
                 read -r response
                 case "$response" in
                     y|Y|yes|Yes|'' );;
-                    n|N|no|No ) return;;
+                    n|N|no|No ) exit;;
                     all ) all_convert=true;;
-                    * ) return;;
+                    * ) exit;;
                 esac
             fi
             sudo mv "$convTarget" "$convTarget.old" || exit # tries to move $convTarget to a subdirectory of itself if it ends in a "/"
