@@ -1,16 +1,16 @@
 # btwrap
 Simple shell wrapper for btrfs snapshots (creation, cleanup, space usage polling)
 
-This wrapper was intended to simplify the use of basic snapshot functions with these default behaviors:
-* snapshotting subvolumes based on whether or not they have a `.snapshots` subvolume within them
-* using names picked from a local dictionary at random to keep track of the individual snapshots if needed
-* deleting the oldest snapshot from each `.snapshots` subvolume
+This wrapper is intended to automate basic snapshot functions with these default behaviors:
+* Taking snapshots of subvolumes with `.snapshots` within them
+* Picking random names from a local dictionary for the snapshots to be recongnizable
+* Deleting the oldest snapshot from each `.snapshots` subvolume
     
-Then, options are given to fill in the gaps for whenever you need to do something else, or keep track of space usage
+Then, options are given to fill in the gaps for whenever you need to do something else, still only requiring you to be exactly as specific as you want to be.
 
-Otherwise, a simple systemd timer is able to keep a very basic rolling "backup" of whatever you need, without a config file
+Otherwise, a simple systemd timer and service is able to keep a very basic rolling "backup" of whatever you need, without a config file.
 
-Keep in mind a btrfs snapshot is not a true backup and will be corrupted if the original data is corrupted, yada yada :)
+Keep in mind a btrfs snapshot is not a true backup and will also be corrupted if the original data is corrupted, yada yada :)
 
 # Installation
 
@@ -42,7 +42,7 @@ sudo rm -rf /.snapshots
 sudo rm -rf /etc/snapper /etc/systemd/system/timers.target.wants/snapper-cleanup.timer /etc/systemd/system/timers.target.wants/snapper-timeline.timer
 ```
 
-Try it out! `btwrap -SC /`
+Try it out! `btwrap -C / -S`
 
 To load and enable example systemd service+timer:
 ```sh
