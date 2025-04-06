@@ -132,7 +132,7 @@ diskUsage() {    # usage
 
 subvConvert() {    # exclude
     if [ -n "$1" ]; then
-        convTarget=$1
+        convTarget=${1%/}   # remove trailing slash to avoid trying to move the folder to a subdirectory of itself, due to use of concatenation
 
         # if $convTarget is NOT a btrfs subvolume but is still on a btrfs filesystem
         if [ ! "$(stat --format=%i "$convTarget")" -eq 256 ] && [ "$(stat -f --format=%T "$convTarget")" = "btrfs" ] ; then
@@ -146,13 +146,13 @@ subvConvert() {    # exclude
                     * ) exit;;
                 esac
             fi
-            sudo mv "$convTarget" "$convTarget.old" || exit # tries to move $convTarget to a subdirectory of itself if it ends in a "/"
+            sudo mv "$convTarget" "$convTarget.old" || exit
             sudo btrfs subv create "$convTarget" || exit
             sudo chown "$USER" "$convTarget" || exit
             sudo mv "$convTarget".old/* "$convTarget/" || exit
             sudo rm -rf "$convTarget.old"
         else
-            [ ! "$quiet" = "true" ] && printf "${c}directory -> subvolume conversion target is invalid${e}"
+            [ ! "$quiet" = "true" ] && printf "${c}directory -> subvolume conversion target is invalid${e}\n"
             exit
         fi
 
