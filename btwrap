@@ -132,7 +132,11 @@ diskUsage() {    # usage
 
 subvConvert() {    # exclude
     if [ -n "$1" ]; then
-        convTarget=${1%/}   # remove trailing slash to avoid trying to move the folder to a subdirectory of itself, due to use of concatenation
+        if [ "$1" = "/" ]; then
+            convTarget=$1
+        else
+            convTarget=${1%/}   # remove trailing slash to avoid trying to move the folder to a subdirectory of itself, due to use of concatenation
+        fi
 
         # if $convTarget is NOT a btrfs subvolume but is still on a btrfs filesystem
         if [ ! "$(stat --format=%i "$convTarget")" -eq 256 ] && [ "$(stat -f --format=%T "$convTarget")" = "btrfs" ] ; then
