@@ -152,8 +152,7 @@ subvConvert() {    # exclude
             sudo mv "$convTarget".old/* "$convTarget/" || exit
             sudo rm -rf "$convTarget.old"
         else
-            [ ! "$quiet" = "true" ] && printf "${c}directory -> subvolume conversion target is invalid${e}\n"
-            exit
+            return 1
         fi
 
     fi
