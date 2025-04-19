@@ -15,7 +15,7 @@ ${c}Options${e}
 ${c}Actions${e}
     -C <dir>      ${c}create${e} a '.snapshots' subvolume to stage it for snapshotting
 
-For each '.snapshots' subvolume: (or specify a subvolume with -m <path>)
+For each '.snapshots' subvolume: (or specify a subvolume with -p <path>)
     -S            take a ${c}snapshot${e}
     -D            ${r}delete${e} the oldest snapshot
     -L            ${c}list${e} all snapshots
@@ -28,7 +28,7 @@ Other:
 
 ${c}Example usage${e}
 btwrap -C /home     # creates subvolume /home/.snapshots
-btwrap -Sm /home    # snapshots /home subvolume into /home/.snapshots
+btwrap -Sp /home    # snapshots /home subvolume into /home/.snapshots
 btwrap -SD          # for each staged subvolume: snapshot it, then delete the oldest snapshot
 "
 }
@@ -163,11 +163,11 @@ subvConvert() {    # exclude
     fi
 }
 
-optstring="m:LUC:Sn:DqGE:h"
+optstring="p:LUC:Sn:DqGE:h"
 while getopts $optstring option; do
     case "$option" in
         h) print_usage && exit;;
-        m) path=${OPTARG};;
+        p) path=${OPTARG};;
         q) quiet=true;;
     esac
 done
@@ -176,7 +176,7 @@ OPTIND=1
 
 while getopts $optstring action; do
     case "$action" in
-            m|q);;
+            p|q);;
 
         C) subvCreate "${OPTARG}";;
         S) snapTake;;
