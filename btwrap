@@ -2,7 +2,7 @@
 r="\033[31;1m"
 c="\033[36;1m"
 e="\033[0m"
-dict_path="/usr/share/dict/cracklib-small"
+# dict_path="/usr/share/dict/cracklib-small"
 
 
 print_usage() {
@@ -49,13 +49,14 @@ subvCreate() {    # create
 snapTake() {    # snapshot
     rand=$(dd if=/dev/urandom count=1 2> /dev/null | cksum | cut -d' ' -f1)
 
-    if [ -r $dict_path ]; then  # if $dict_path DOES exist and is readable
-        name=$(shuf -n 1 $dict_path)$rand
-    else
-        [ ! "$quiet" = "true" ] && printf "${c}Unreadable or DNE: ${dict_path} falling back to just random int${e}\n"
-        name=$rand
-    fi
+#     if [ -r $dict_path ]; then  # if $dict_path DOES exist and is readable
+#         name=$(shuf -n 1 $dict_path)$rand
+#     else
+#         [ ! "$quiet" = "true" ] && printf "${c}Unreadable or DNE: ${dict_path} falling back to just random int${e}\n"
+#         name=$rand
+#     fi
 
+    name=$rand
 
     if [ -z "$path" ]; then   # if $path is empty
         for i in $(sfd); do
