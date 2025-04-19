@@ -1,0 +1,13 @@
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Operation = Remove
+Type = Package
+Target = linux
+Target = linux-zen
+Target = linux-lts
+
+[Action]
+Depends = btwrap
+When = PreTransaction
+Exec = /usr/bin/btwrap -qp / -DS
