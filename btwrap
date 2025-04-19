@@ -2,7 +2,6 @@
 r="\033[31;1m"
 c="\033[36;1m"
 e="\033[0m"
-# dict_path="/usr/share/dict/cracklib-small"
 
 
 print_usage() {
@@ -16,7 +15,7 @@ ${c}Actions${e}
     -C <dir>      ${c}create${e} a '.snapshots' subvolume to stage it for snapshotting
 
 For each '.snapshots' subvolume: (or specify a subvolume with -p <path>)
-    -S            take a ${c}snapshot${e}
+    -S            take a ${c}snapshot${e} (optionally use -n <name> to specify a name)
     -D            ${r}delete${e} the oldest snapshot
     -L            ${c}list${e} all snapshots
     -U            poll for a disk ${c}usage${e} summary
@@ -49,21 +48,12 @@ subvCreate() {    # create
 snapTake() {    # snapshot
     rand=$(dd if=/dev/urandom count=1 2> /dev/null | cksum | cut -d' ' -f1)
 
-#     if [ -r $dict_path ]; then  # if $dict_path DOES exist and is readable
-#         name=$(shuf -n 1 $dict_path)$rand
-#     else
-#         [ ! "$quiet" = "true" ] && printf "${c}Unreadable or DNE: ${dict_path} falling back to just random int${e}\n"
-#         name=$rand
-#     fi
-
-    name=$rand
-
     if [ -z "$path" ]; then   # if $path is empty
         for i in $(sfd); do
-            sudo btrfs subv snap -r "/$i/../" "/$i/$name"
+            sudo btrfs subv snap -r "/$i/../" "/$i/$name$rand"
         done
     else
-        sudo btrfs subv snap -r "$path" "$path/.snapshots/$name"
+        sudo btrfs subv snap -r "$path" "$path/.snapshots/$name$rand"
     fi
 }
 
@@ -163,12 +153,13 @@ subvConvert() {    # exclude
     fi
 }
 
-optstring="p:LUC:Sn:DqGE:h"
+optstring="p:LUC:Sn:DqGE:hn:"
 while getopts $optstring option; do
     case "$option" in
         h) print_usage && exit;;
         p) path=${OPTARG};;
         q) quiet=true;;
+        n) name=${OPTARG};;
     esac
 done
 
@@ -176,7 +167,7 @@ OPTIND=1
 
 while getopts $optstring action; do
     case "$action" in
-            p|q);;
+            h|p|q|n);;
 
         C) subvCreate "${OPTARG}";;
         S) snapTake;;

@@ -10,4 +10,4 @@ Target = linux-lts
 [Action]
 Depends = btwrap
 When = PreTransaction
-Exec = /usr/bin/btwrap -qp / -DS
+Exec = /usr/bin/btwrap -q -n pre -p / -DS
