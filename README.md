@@ -18,6 +18,7 @@ Keep in mind a btrfs snapshot is not a true backup and will also be corrupted if
 ```sh
 paru -S btwrap-git
 ```
+This package also makes use of `libalpm-hooks` to cycle snapshots upon kernel installation/deletion/upgrade, and to update grub if `grub-btrfs` is installed.
 
 ### Generic
 ```sh
@@ -50,4 +51,10 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now btwrap.timer
 ```
 
+# Limitations
 
+* minimal checks for whether the filesystem is btrfs
+* all cycling of snapshots does not check if there are not enough existing snapshots
+    * risk of user error (in not creating enough snapshots) letting an important snapshot get deleted as it automatically cycles
+* Arch linux:
+    * nothing checks whether the system uses grub (specifically for `btwrap-grub-update.hook`)
