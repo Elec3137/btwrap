@@ -15,6 +15,7 @@ Keep in mind a btrfs snapshot is not a true backup and will also be corrupted if
 # Installation
 
 ### Arch linux
+Published to the Arch User Repository at: https://aur.archlinux.org/packages/btwrap-git
 ```sh
 paru -S btwrap-git
 ```
