@@ -1,186 +1,188 @@
-#!/bin/sh
-r="\033[31;1m"
-c="\033[36;1m"
-e="\033[0m"
+#!/usr/bin/env fish
+
+function print_usage
+    printf 'Shell wrapper for btrfs snapshots (creation, cleanup, space usage polling)
+
+Options
+    -q            quiet (suppress extra warnings and all confirmations)
+    -h            display this help
+
+Actions
+    -C <dir>      create a ".snapshots" subvolume to stage it for snapshotting
+
+For each ".snapshots" subvolume: (or specify a subvolume with -p <path>)
+    -S            take a snapshot (optionally use -n <name> to specify a name)
+    -D            delete the oldest snapshot
+    -L            list all snapshots
+    -U            poll for a disk usage summary
+
+Other
+    -G            update grub (for grub-btrfs)
+    -E <dir>     exclude from any future parent snapshots by converting target into a subvolume
 
 
-print_usage() {
-printf "${c}Shell wrapper for btrfs snapshots (creation, cleanup, space usage polling)${e}
-
-${c}Options${e}
-    -q            ${c}quiet${e} (suppress extra warnings and all confirmations)
-    -h            display this ${c}help${e}
-
-${c}Actions${e}
-    -C <dir>      ${c}create${e} a '.snapshots' subvolume to stage it for snapshotting
-
-For each '.snapshots' subvolume: (or specify a subvolume with -p <path>)
-    -S            take a ${c}snapshot${e} (optionally use -n <name> to specify a name)
-    -D            ${r}delete${e} the oldest snapshot
-    -L            ${c}list${e} all snapshots
-    -U            poll for a disk ${c}usage${e} summary
-
-Other:
-    -G            update ${c}grub${e} (for grub-btrfs)
-    -E <dir>      ${c}exclude${e} from any future parent snapshots by converting target into a subvolume
-
-
-${c}Example usage${e}
+Example usage
 btwrap -C /home     # creates subvolume /home/.snapshots
 btwrap -Sp /home    # snapshots /home subvolume into /home/.snapshots
-btwrap -SD          # for each staged subvolume: snapshot it, then delete the oldest snapshot
-"
-}
+btwrap -SD          # for each staged subvolume: snapshot it, then delete the oldest snapshot'
+end
 
-sfd() {    # finds only toplevel directories with the name ".snapshots"
+function err --description 'prints the given error message'
+    set_color brred
+    echo $argv
+    set_color normal
+end
 
-#sudo find / -name .snapshots -prune -name ".snapshots" 2>/dev/null
-#fd -H "\.snapshots" / | grep -vE "/.snapshots/.*.snapshots/"
+function info --description 'prints info in cyan' # TODO don't print if quiet argument is recieved
+    set_color cyan
+    echo $argv
+    set_color normal
+end
 
-sudo btrfs subv list / | grep snapshots$ | cut -d " " -f 9 | cut -d '@' -f 2
-}
+function confirm --description 'asks for use input, returns 0 (yes) or 1 (no).' # TODO return 0 if not interactive
+    set_color cyan
+    echo -n "$argv [y/N]" # TODO consider implementing "all" option
+    set_color normal
 
-subvCreate() {    # create
-    subvConvert "$1"
-    sudo btrfs subv create "$1/.snapshots"
-}
-
-snapTake() {    # snapshot
-    rand=$(dd if=/dev/urandom count=1 2> /dev/null | cksum | cut -d' ' -f1)
-
-    if [ -z "$path" ]; then   # if $path is empty
-        for i in $(sfd); do
-            sudo btrfs subv snap -r "/$i/../" "/$i/$name$rand"
-        done
+    read response
+    if string match -qr 'y|ye|yes' $(string lower $response)
+        return 0
     else
-        sudo btrfs subv snap -r "$path" "$path/.snapshots/$name$rand"
-    fi
-}
+        return 1
+    end
+end
 
-snapDelete() {    # delete
+function sfd --description 'finds only toplevel directories with the name ".snapshots"'
+    sudo btrfs subv list / | grep snapshots\$ | cut -d " " -f 9 | cut -d '@' -f 2
+end
+
+function subvCreate # create
+    subvConvert "$argv"
+    sudo btrfs subv create "$argv/.snapshots"
+end
+
+function snapTake --description snapshot
+    if [ -z "$path" ] # if $path is empty
+        for i in $(sfd)
+            sudo btrfs subv snap -r "/$i/../" "/$i/$name$(random)"
+        end
+    else
+        sudo btrfs subv snap -r "$path" "$path/.snapshots/$name$(random)"
+    end
+end
+
+function snapDelete --description delete
     # setting of (deletion) $target needs a weird "echo" (to output it all at once to awk?)
     # and echoed command MUST NOT be in double quotes (why?)
 
-    if [ -z "$path" ]; then    # $path is empty
-        for i in $(sfd); do
-            target=$(echo $(sudo ls -t --time creation "/$i") | awk '{print $NF}')
+    if [ -z "$path" ] # $path is empty
+        for i in $(sfd)
+            set target $(echo $(sudo ls -t --time creation "/$i") | awk '{print $NF}')
 
-            if [ -n "$target" ]; then
-                if [ ! "$quiet" = "true" ] && [ ! "$all_delete" = "true" ]; then
-                    printf "Delete '/${i}/$target'? [Y/n/all] "
-                    read -r response
-                    case "$response" in
-                        y|Y|yes|Yes|'' );;
-                        n|N|no|No ) return;;
-                        all ) all_delete=true;;
-                        * ) return;;
-                    esac
-                fi
-                sudo btrfs subv delete "/${i}/$target"
+            if [ -n "$target" ]
+                if confirm "Delete '/$i/$target'?"
+                    sudo btrfs subv delete "/$i/$target"
+                end
             else
-                [ ! "$quiet" = "true" ] && printf "${c}no snapshots to delete in '${e}/$i${c}', skipping deletion of:${e} /${i}/$target\n"
-            fi
-        done
+                info "no snapshots to delete in /$i, skipping deletion of: /$i/$target"
+            end
+        end
     else
-        target=$(echo $(sudo ls -t --time creation "$path/.snapshots") | awk '{print $NF}')
+        set target $(echo $(sudo ls -t --time creation "$path/.snapshots") | awk '{print $NF}')
 
-        if [ -n "$target" ]; then
-            if [ ! "$quiet" = "true" ] && [ ! "$all" = "true" ]; then
-                printf "Delete '${path}/.snapshots/$target'? [Y/n] "
-                read -r response
-                case "$response" in
-                    y|Y|yes|Yes|'' );;
-                    n|N|no|No ) return;;
-                    * ) return;;
-                esac
-            fi
-
-            sudo btrfs subv delete "${path}/.snapshots/$target"
+        if [ -n "$target" ]
+            then
+            if confirm "Delete '$path/.snapshots/$target'?"
+                sudo btrfs subv delete "$path/.snapshots/$target"
+            end
         else
-            [ ! "$quiet" = "true" ] && printf "${c}no snapshots to delete in '${e}$path/.snapshots/${c}', skipping deletion of:${e} ${path}/.snapshots/$target\n"
-        fi
-    fi
-}
+            info "no snapshots to delete in '$path/.snapshots/', skipping deletion of: $path/.snapshots/$target"
+        end
+    end
+end
 
-snapList() {    # list
-    if [ -z "$path" ]; then   # if $path is empty
+function snapList
+    if [ -z "$path" ] # if $path is empty
         sudo btrfs subv list -st /
     else
         sudo btrfs subv list -sto "$path"
-    fi
-}
+    end
+end
 
-diskUsage() {    # usage
-    [ ! "$quiet" = "true" ] && printf "${c}be patient please! this may take a while:${e}\n"
-    if [ -z "$path" ]; then
-        for i in $(sfd); do
+function diskUsage
+    info "be patient please! this may take a while:"
+    if [ -z "$path" ]
+        for i in $(sfd)
             sudo btrfs filesystem du -s "/$i"
-        done
+        end
     else
         sudo btrfs filesystem du -s "$path/.snapshots"
-    fi
-}
+    end
+end
 
-subvConvert() {    # exclude
-    if [ -n "$1" ]; then
-        if [ "$1" = "/" ]; then
-            convTarget=$1
-        else
-            convTarget=${1%/}   # remove trailing slash to avoid trying to move the folder to a subdirectory of itself, due to use of concatenation
-        fi
+function subvConvert --description 'takes a path and converts it to a subvolume, effectively excluding it from parent snapshots
+returns 1 if path is already a subvolume, not a btrfs filesystem, or no arguments are passed
+This function can cause unhandleable errors and therefore exit the program'
+    if path is $argv
+
+        set convTarget $(path normalize $argv) # remove trailing slash to avoid trying to move the folder to a subdirectory of itself, due to use of concatenation
 
         # if $convTarget is NOT a btrfs subvolume but is still on a btrfs filesystem
-        if [ ! "$(stat --format=%i "$convTarget")" -eq 256 ] && [ "$(stat -f --format=%T "$convTarget")" = "btrfs" ] ; then
-            if [ ! "$quiet" = "true" ] && [ ! "$all_convert" = "true" ]; then
-                printf "Convert '$convTarget' to a subvolume of the same name? [Y/n/all] "
-                read -r response
-                case "$response" in
-                    y|Y|yes|Yes|'' );;
-                    n|N|no|No ) exit;;
-                    all ) all_convert=true;;
-                    * ) exit;;
-                esac
-            fi
+        if [ ! "$(stat --format=%i "$convTarget")" -eq 256 ] && [ "$(stat -f --format=%T "$convTarget")" = btrfs ]
+
+            if not confirm "Convert '$convTarget' to a subvolume of the same name?"
+                exit
+            end
+
             sudo mv "$convTarget" "$convTarget.old" || exit
             sudo btrfs subv create "$convTarget" || exit
             sudo chown "$USER" "$convTarget" || exit
-            sudo mv "$convTarget".old/* "$convTarget/" || exit
+            sudo mv "$convTarget.old/*" "$convTarget/" || exit
             sudo rm -rf "$convTarget.old"
+            return
         else
             return 1
-        fi
+        end
 
-    fi
-}
+    end
 
-optstring="p:LUC:Sn:DqGE:hn:"
-while getopts $optstring option; do
-    case "$option" in
-        h) print_usage && exit;;
-        p) path=${OPTARG};;
-        q) quiet=true;;
-        n) name=${OPTARG};;
-    esac
-done
+    return 1
+end
 
-OPTIND=1
+argparse h/help p/path= q/quiet n/name C/create= S/snapshot D/delete-snapshot L/list-snapshots U/disk-usage E/exclude-directory= G/update-grub -- $argv
+or exit
 
-while getopts $optstring action; do
-    case "$action" in
-            h|p|q|n);;
+if test -n "$_flag_h"
+    print_usage
+    exit
+end
 
-        C) subvCreate "${OPTARG}";;
-        S) snapTake;;
-        D) snapDelete;;
-        L) snapList;;
-        U) diskUsage;;
-        E) subvConvert "${OPTARG}";;
+set -g name $_flag_n
+set -g quiet $_flag_q
+set -g path $_flag_p
 
-        G) sudo grub-mkconfig -o /boot/grub/grub.cfg;;
+subvConvert "$_flag_E"
 
-        *) printf "\n"
-            print_usage
-            exit 1 ;;
-    esac
-done
+if test -n "$_flag_C"
+    subvCreate "$_flag_C"
+end
 
+if test -n "$_flag_D"
+    snapDelete
+end
+
+if test -n "$_flag_S"
+    snapTake
+end
+
+if test -n "$_flag_G"
+    sudo grub-mkconfig -o /boot/grub/grub.cfg
+end
+
+if test -n "$_flag_U"
+    diskUsage
+end
+
+if test -n "$_flag_L"
+    snapList
+end
